@@ -1,279 +1,202 @@
-<!DOCTYPE html>
-<html lang="si">
+OCTYPE html>
+<html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>THUHI MD - Pairing Code Panel</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: 'Poppins', sans-serif;
-        }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+  <title>𝐓𝐡𝐮𝐡𝐢 𝐌𝐝</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"/>
+  <style>
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+      background: Black;
+      font-family: Arial, sans-serif;
+      overflow: hidden;
+    }
 
-        body {
-            background: radial-gradient(circle, #0d1117 0%, #07090e 100%);
-            color: #ffffff;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            padding: 20px;
-        }
+    .container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      z-index: 2;
+    }
 
-        .container {
-            background: rgba(22, 27, 34, 0.8);
-            border: 2px solid #00ffcc;
-            box-shadow: 0 0 25px rgba(0, 255, 204, 0.3);
-            border-radius: 20px;
-            padding: 40px 30px;
-            width: 100%;
-            max-width: 450px;
-            text-align: center;
-            backdrop-filter: blur(10px);
-            transition: transform 0.3s ease;
-        }
+    .box {
+      width: 330px;
+      padding: 20px;
+      background-color: Black;
+      border-radius: 10px;
+      text-align: center;
+      box-shadow: 0 0 25px #00f2ff;
+      z-index: 2;
+    }
 
-        .container:hover {
-            transform: translateY(-5px);
-        }
+    @keyframes flicker {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.6; text-shadow: 0 0 5px #0ff, 0 0 20px #0ff; }
+    }
 
-        .logo-area img {
-            width: 120px;
-            height: 120px;
-            border-radius: 50%;
-            object-fit: cover;
-            border: 3px solid #00ffcc;
-            box-shadow: 0 0 15px #00ffcc;
-            margin-bottom: 20px;
-        }
+    h3, h6 {
+      color: #00f2ff;
+      animation: flicker 2s infinite alternate;
+      margin: 10px 0;
+    }
 
-        h1 {
-            font-size: 28px;
-            color: #00ffcc;
-            font-weight: 700;
-            letter-spacing: 2px;
-            margin-bottom: 5px;
-            text-shadow: 0 0 10px rgba(0, 255, 204, 0.5);
-        }
+    .input-container {
+      display: flex;
+      width: 100%;
+      margin-top: 16px;
+    }
 
-        p.subtitle {
-            color: #8b949e;
-            font-size: 14px;
-            margin-bottom: 30px;
-        }
+    .input-container input,
+    .input-container button {
+      height: 3rem;
+      font-size: 1rem;
+      border: none;
+      outline: none;
+      box-sizing: border-box;
+      transition: none !important;
+      transform: none !important;
+      resize: none !important;
+      appearance: none;
+    }
 
-        .input-group {
-            position: relative;
-            margin-bottom: 25px;
-            text-align: left;
-        }
+    .input-container input {
+      width: 70%;
+      border-radius: 0.8rem 0 0 0.8rem;
+      background: #e0f7ff;
+      color: #000;
+      padding-left: 1rem;
+    }
 
-        .input-group label {
-            display: block;
-            font-size: 13px;
-            color: #00ffcc;
-            margin-bottom: 8px;
-            font-weight: 600;
-        }
+    .input-container button {
+      width: 30%;
+      border-radius: 0 0.8rem 0.8rem 0;
+      background: #00bfff;
+      color: #fff;
+      font-weight: bold;
+      cursor: pointer;
+    }
 
-        .input-box {
-            position: relative;
-        }
+    .input-container button:hover {
+      background: #00ffff;
+      color: #000;
+    }
 
-        .input-box i {
-            position: absolute;
-            left: 15px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: #8b949e;
-            font-size: 18px;
-        }
+    a.centered-text {
+      color: white;
+      display: block;
+      margin-top: 20px;
+      font-weight: bold;
+    }
 
-        .input-box input {
-            width: 100%;
-            padding: 15px 15px 15px 50px;
-            background: #0d1117;
-            border: 1px solid #30363d;
-            border-radius: 10px;
-            color: #fff;
-            font-size: 16px;
-            outline: none;
-            transition: 0.3s;
-        }
+    /* Neon dot background animation */
+    .Neon-bg {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: black;
+      overflow: hidden;
+      z-index: 1;
+    }
 
-        .input-box input:focus {
-            border-color: #00ffcc;
-            box-shadow: 0 0 10px rgba(0, 255, 204, 0.2);
-        }
+    .dot {
+      position: absolute;
+      width: 8px;
+      height: 4px;
+      background: #00ffff;
+      border-radius: 50%;
+      animation: rise 5s linear infinite;
+      opacity: 0.6;
+    }
 
-        .btn-submit {
-            width: 100%;
-            padding: 15px;
-            background: linear-gradient(45deg, #00ffcc, #0099ff);
-            border: none;
-            border-radius: 10px;
-            color: #07090e;
-            font-size: 16px;
-            font-weight: 700;
-            cursor: pointer;
-            transition: 0.3s ease;
-            box-shadow: 0 5px 15px rgba(0, 255, 204, 0.4);
-        }
-
-        .btn-submit:hover {
-            opacity: 0.9;
-            box-shadow: 0 5px 20px rgba(0, 255, 204, 0.6);
-        }
-
-        /* Loading Animation Spinner */
-        .loading {
-            display: none;
-            margin: 20px auto;
-            border: 4px solid rgba(255,255,255,0.1);
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            border-left-color: #00ffcc;
-            animation: spin 1s linear infinite;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        /* Code Display Area */
-        .code-display {
-            display: none;
-            margin-top: 30px;
-            background: #0d1117;
-            border: 2px dashed #00ffcc;
-            padding: 20px;
-            border-radius: 12px;
-            animation: fadeIn 0.5s ease;
-        }
-
-        .code-display h3 {
-            font-size: 14px;
-            color: #8b949e;
-            margin-bottom: 10px;
-        }
-
-        .pair-code {
-            font-size: 32px;
-            font-weight: 700;
-            color: #ff3366;
-            letter-spacing: 5px;
-            margin-bottom: 15px;
-            text-shadow: 0 0 10px rgba(255, 51, 102, 0.3);
-        }
-
-        .instructions {
-            font-size: 12px;
-            color: #8b949e;
-            line-height: 1.6;
-            text-align: left;
-            background: rgba(255,255,255,0.03);
-            padding: 10px;
-            border-radius: 8px;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10deg); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-    </style>
+    @keyframes rise {
+      0% {
+        transform: translateY(100vh) scale(0.5);
+        opacity: 0.2;
+      }
+      100% {
+        transform: translateY(-10vh) scale(1);
+        opacity: 1;
+      }
+    }
+  </style>
 </head>
 <body>
+  <div class="yellow-bg" id="dots"></div>
 
-    <div class="container">
-        <div class="logo-area">
-            <img src="https://i.ibb.co/1fn2R654/1000846554.png" alt="THUHI MD">
+  <div class="container">
+    <div class="box" id="box">
+      <div id="text">
+        <i class="fa fa-user" style="color:#00ffff;"></i>
+        <h3>𝐓𝐡𝐮𝐡𝐢 𝐌𝐝</h3>
+        <h6>ᴩᴏᴡᴇʀᴅ ʙʏ ᴠɪᴍᴜᴋᴛʜɪ ᴛʜᴜʜɪɴᴀ[ᴡʜɪᴛᴇ ᴅᴇᴠɪʟ]</h6>
+        <h6>🔢 Enter your number with country code</h6>
+
+        <div class="input-container">
+          <input placeholder="9477xxxxxxx" type="number" id="number">
+          <button id="submit">Submit</button>
         </div>
-        
-        <h1>𝐓𝐇𝐔𝐇𝐈 𝐌𝐃</h1>
-        <p class="subtitle">WhatsApp Multi-Device Link Panel</p>
 
-        <form id="pairingForm" onsubmit="generatePairCode(event)">
-            <div class="input-group">
-                <label for="phoneNumber">WhatsApp Number (රටේ කේතය සමග)</label>
-                <div class="input-box">
-                    <i class="fa-solid fa-phone"></i>
-                    <input type="number" id="phoneNumber" placeholder="e.g., 94771234567" required>
-                </div>
-            </div>
-
-            <button type="submit" class="btn-submit" id="submitBtn">
-                <i class="fa-solid fa-key"></i> GET PAIRING CODE
-            </button>
-        </form>
-
-        <div class="loading" id="loadingSpinner"></div>
-
-        <div class="code-display" id="codeDisplay">
-            <h3>YOUR PAIRING CODE</h3>
-            <div class="pair-code" id="pairCodeTxt">XXXX-XXXX</div>
-            <div class="instructions">
-                <p><strong>පියවර:</strong></p>
-                <p>1. ඔබගේ දුරකථනයේ WhatsApp විවෘත කරන්න.</p>
-                <p>2. Settings -> Linked Devices -> Link a Device වෙත යන්න.</p>
-                <p>3. <b>Link with phone number instead</b> ඔබා ඉහත කේතය ඇතුලත් කරන්න.</p>
-            </div>
-        </div>
+        <a id="waiting-message" class="centered-text" style="display: none;">Please wait a while...</a>
+        <main id="pair"></main>
+      </div>
     </div>
+  </div>
 
-    <script>
-        function generatePairCode(event) {
-            event.preventDefault();
-            
-            const numInput = document.getElementById('phoneNumber').value.trim();
-            const loading = document.getElementById('loadingSpinner');
-            const display = document.getElementById('codeDisplay');
-            const codeTxt = document.getElementById('pairCodeTxt');
-            const submitBtn = document.getElementById('submitBtn');
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.0.0-alpha.1/axios.min.js"></script>
+  <script>
+    let a = document.getElementById("pair");
+    let b = document.getElementById("submit");
+    let c = document.getElementById("number");
 
-            if(!numInput) return;
+    async function Copy() {
+      let text = document.getElementById("copy").innerText;
+      let obj = document.getElementById("copy");
+      await navigator.clipboard.writeText(obj.innerText.replace('CODE: ', ''));
+      obj.innerText = "COPIED";
+      obj.style = "color:blue;font-weight:bold";
+      obj.size = "5";
+      setTimeout(() => {
+        obj.innerText = text;
+        obj.style = "color:white;font-weight-bold";
+        obj.size = "5";
+      }, 500);
+    }
 
-            // UI වෙනස්කම් සිදු කිරීම
-            submitBtn.style.display = 'none';
-            loading.style.display = 'block';
-            display.style.display = 'none';
+    b.addEventListener("click", async (e) => {
+      e.preventDefault();
+      if (!c.value) {
+        a.innerHTML = '<a style="color:white;font-weight:bold">Enter your WhatsApp number with Country Code</a><br><br>';
+      } else if (c.value.replace(/[^0-9]/g, "").length < 11) {
+        a.innerHTML = '<a style="color:red;font-weight:bold">Invalid Number</a><br><br>';
+      } else {
+        const number = c.value.replace(/[^0-9]/g, "");
+        c.type = "text";
+        c.value = "+" + number;
+        c.style = "color:black;font-size:25px";
+        a.innerHTML = '<a style="color:white;font-weight:bold">Please Wait...</<div>a</div>><br><br>';
+        let { data } = await axios(`/code?number=${number}`);
+        let code = data.code || "Service Unavailable";
+        a.innerHTML = `<font id="copy" onclick="Copy()" style="color:red;font-weight:bold" size="5">CODE: <span style="color:white;">${code}</span></font><br><br><br>`;
+      }
+    });
 
-            // බෝට්ගේ Backend එකට Request එක යවන ආකාරය (Render එකට දැම්මම ක්‍රියා කරයි)
-            // සටහන: බෝට්ගේ Server එක link කරාම මේ fetch එක හරහා code එක කෙලින්ම screen එකට එනවා.
-            fetch(`/api/getcode?number=${numInput}`)
-                .then(res => res.json())
-                .then(data => {
-                    loading.style.display = 'none';
-                    submitBtn.style.display = 'block';
-                    
-                    if(data.code) {
-                        codeTxt.innerText = data.code;
-                        display.style.display = 'block';
-                    } else {
-                        alert("කේතය ලබා ගැනීමට නොහැකි විය. බෝට් ක්‍රියාත්මකදැයි පරීක්ෂා කරන්න.");
-                    }
-                })
-                .catch(err => {
-                    // දැනට Backend එක නැති නිසා Demo එකක් ලෙස වැඩ කරන ආකාරය පෙන්වීමට:
-                    setTimeout(() => {
-                        loading.style.display = 'none';
-                        submitBtn.style.display = 'block';
-                        
-                        // Fake Code Generator (Backend සම්බන්ධ වූ පසු මෙය auto real code එකක් බවට පත්වේ)
-                        const sampleCodes = ["AB7C-9X2R", "THUH-I100", "MD94-WP88", "K72M-P9XQ"];
-                        const randomCode = sampleCodes[Math.floor(Math.random() * sampleCodes.length)];
-                        
-                        codeTxt.innerText = randomCode;
-                        display.style.display = 'block';
-                    }, 2500);
-                });
-        }
-    </script>
+    // Dot animation
+    const bg = document.getElementById("dots");
+    for (let i = 0; i < 80; i++) {
+      const dot = document.createElement("div");
+      dot.classList.add("dot");
+      dot.style.left = Math.random() * 100 + "vw";
+      dot.style.animationDuration = 3 + Math.random() * 5 + "s";
+      dot.style.animationDelay = Math.random() * 5 + "s";
+      bg.appendChild(dot);
+    }
+  </script>
 </body>
 </html>
