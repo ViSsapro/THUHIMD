@@ -4,7 +4,7 @@ const {
     DisconnectReason, 
     fetchLatestBaileysVersion, 
     delay,
-    downloadContentFromMessage
+    downloadMediaMessage
 } = require("@whiskeysockets/baileys");
 const pino = require("pino");
 const express = require("express");
@@ -14,12 +14,12 @@ const axios = require("axios");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// 🖼️ THUHI MD Logo Link (ඔයා හොයාගත්තු නියම PNG ලින්ක් එක)
+// 🖼️ THUHI MD Logo Link
 const botLogoUrl = "https://i.ibb.co/Z6gnPvV2/file-000000009be47207afef1535933c3f19.png";
 
 let sock = null;
 
-// Anti-Delete සහ One-View තාවකාලිකව තබා ගන්නා තැන්
+// දත්ත තාවකාලිකව තබා ගන්නා මතක ගබඩාවන් (Memory Stores)
 const messageStore = {};
 const viewOnceStore = {}; 
 
@@ -46,7 +46,7 @@ async function startThuhiMD() {
             if (shouldReconnect) startThuhiMD();
         } else if (connection === 'open') {
             console.log('=================================================');
-            console.log('🎉 THUHI MD සාර්ථකව සම්බන්ධ විය! (CONNECTED)');
+            console.log('🎉 THUHI MD IS NATURALLY WORKING NOW!');
             console.log('=================================================');
         }
     });
@@ -54,34 +54,35 @@ async function startThuhiMD() {
     // මැසේජ් ලැබෙන විට ක්‍රියාත්මක වන පද්ධතිය
     sock.ev.on('messages.upsert', async chatUpdate => {
         try {
+            if (chatUpdate.type !== 'notify') return;
             const mek = chatUpdate.messages[0];
             if (!mek.message) return;
 
             const from = mek.key.remoteJid;
             const msgId = mek.key.id;
             
-            // Anti-Delete සඳහා මැසේජ් සේව් කරගැනීම
+            // 🛑 ANTI-DELETE සඳහා ලැබෙන හැම මැසේජ් එකක්ම මතක තබා ගැනීම
             messageStore[msgId] = mek;
 
-            // One-View Photo එකක් ආවොත් මතකයට ගැනීම
+            // 🔓 ONE-VIEW PHOTO එකක් ආවොත් රහසින් මතක තබා ගැනීම
             const isViewOnce = mek.message.viewOnceMessageV2 || mek.message.viewOnceMessage;
             if (isViewOnce) {
-                const viewOnceMsg = mek.message.viewOnceMessageV2?.message?.imageMessage || mek.message.viewOnceMessage?.message?.imageMessage;
-                if (viewOnceMsg) {
-                    viewOnceStore[msgId] = viewOnceMsg;
-                }
+                viewOnceStore[msgId] = mek;
             }
 
             // Ephemeral පිරිසිදු කිරීම
-            mek.message = (Object.keys(mek.message)[0] === 'ephemeralMessage') ? mek.message.ephemeralMessage.message : mek.message;
-            const type = Object.keys(mek.message)[0];
+            let msgType = Object.keys(mek.message)[0];
+            if (msgType === 'ephemeralMessage') {
+                mek.message = mek.message.ephemeralMessage.message;
+                msgType = Object.keys(mek.message)[0];
+            }
             
-            // Text එක ලබා ගැනීම
+            // Text එක නිවැරදිව ලබා ගැනීම
             let body = '';
-            if (type === 'conversation') body = mek.message.conversation;
-            else if (type === 'extendedTextMessage') body = mek.message.extendedTextMessage.text;
-            else if (type === 'imageMessage') body = mek.message.imageMessage.caption;
-            else if (type === 'videoMessage') body = mek.message.videoMessage.caption;
+            if (msgType === 'conversation') body = mek.message.conversation;
+            else if (msgType === 'extendedTextMessage') body = mek.message.extendedTextMessage.text;
+            else if (msgType === 'imageMessage') body = mek.message.imageMessage.caption;
+            else if (msgType === 'videoMessage') body = mek.message.videoMessage.caption;
 
             const prefix = '.';
             const isCmd = body.startsWith(prefix);
@@ -89,7 +90,7 @@ async function startThuhiMD() {
             const args = body.trim().split(/ +/).slice(1);
 
             if (isCmd) {
-                // 1. ALIVE COMMAND (.alive)
+                // 1. ALIVE COMMAND
                 if (command === 'alive') {
                     const aliveMsg = `👋 *THUHI MD IS ALIVE NOW*
 
@@ -97,71 +98,75 @@ async function startThuhiMD() {
 *VERSION* - 1.0.0
 *PREFIX* - [ . ]
 
-💬 මාත් එක්ක තියෙන Commands ඔක්කොම බලන්න \`.menu\` ලෙස Type කරන්න!`;
+💬 සියලුම විධානයන් බැලීමට \`.menu\` ලෙස ටයිප් කරන්න!`;
                     await sock.sendMessage(from, { image: { url: botLogoUrl }, caption: aliveMsg }, { quoted: mek });
                 }
 
-                // 2. MENU COMMAND (.menu)
+                // 2. MENU COMMAND
                 if (command === 'menu' || command === 'help') {
                     const menuText = `✨ *THUHI MD WHATSAPP BOT MENU* ✨
 
-👋 හෙලෝ යාළුවා, මම THUHI MD බහුකාර්ය WhatsApp බෝට්.
+👋 හෙලෝ යාළුවා, මම THUHI MD බහුකාර්ය බෝට්.
 
 *📥 DOWNLOAD COMMANDS:*
-• \`.dl [link]\` - TikTok, FB, Insta, YouTube වීඩියෝ ඩවුන්ලෝඩ් කරන්න.
+• \`.dl [link]\` - TikTok, FB, Insta, YouTube වීඩියෝ බාගන්න.
 
 *🖼️ STICKER COMMANDS:*
-• \`.sticker\` / \`.s\` - ඡායාරූපයකට Reply කර ස්ටිකර් එකක් සාදාගන්න.
+• \`.sticker\` / \`.s\` - ඡායාරූපයකට Reply කර ස්ටිකර් සාදන්න.
 
 *🔓 WHATSAPP TOOLS:*
-• \`.ovp\` - One-View ඡායාරූපයකට Reply කර එය සාමාන්‍ය ඡායාරූපයක් ලෙස ලබාගන්න.
-
-*🤖 SYSTEM COMMANDS:*
-• \`.alive\` - බෝට් ක්‍රියාකාරීදැයි පරීක්ෂා කිරීමට.
-• \`.menu\` - මේ මෙනුව ලබා ගැනීමට.
+• \`.ovp\` - One-View ඡායාරූපයකට Reply කර එය ලබාගන්න.
 
 ---
 *🚨 AUTOMATIC FEATURES:*
-• *Anti-Delete:* කවුරුහරි මකන මැසේජ් ඔටෝමැටිකව චැට් එකට ලබාදේ.
+• *Anti-Delete:* කවුරුහරි මකන මැසේජ් ඔටෝමැටිකව නැවත ලබාදේ.
 
 _Powered by Vimukthi Thuhina_`;
                     await sock.sendMessage(from, { image: { url: botLogoUrl }, caption: menuText }, { quoted: mek });
                 }
 
-                // 3. ONE-VIEW RECOVERY COMMAND (.ovp)
+                // 3. ONE-VIEW RECOVERY (.ovp)
                 if (command === 'ovp') {
                     const quotedMsgId = mek.message.extendedTextMessage?.contextInfo?.stanzaId;
                     if (quotedMsgId && viewOnceStore[quotedMsgId]) {
-                        const savedViewOnce = viewOnceStore[quotedMsgId];
-                        await sock.sendMessage(from, { text: "⏳ *One-View ඡායාරූපය ලබා ගනිමින් පවතී...*" }, { quoted: mek });
+                        await sock.sendMessage(from, { text: "⏳ *One-View ඡායාරූපය බෝට් මඟින් සකසමින් පවතී...*" }, { quoted: mek });
+                        const targetMek = viewOnceStore[quotedMsgId];
                         
-                        const stream = await downloadContentFromMessage(savedViewOnce, 'image');
-                        let buffer = Buffer.from([]);
-                        for await (const chunk of stream) { buffer = Buffer.concat([buffer, chunk]); }
-                        
-                        await sock.sendMessage(from, { image: buffer, caption: '🔓 *THUHI MD: One-View Photo Recovered!*' }, { quoted: mek });
+                        // ආරක්ෂිතව මීඩියා ඩවුන්ලෝඩ් කිරීම
+                        const buffer = await downloadMediaMessage(targetMek, 'buffer', {}, { logger: pino() });
+                        await sock.sendMessage(from, { image: buffer, caption: '🔓 *THUHI MD: One-View Photo Saved Successfully!*' }, { quoted: mek });
                     } else {
                         await sock.sendMessage(from, { text: "❌ කරුණාකර වලංගු One-View ඡායාරූපයකට පමණක් \`.ovp\` ලෙස Reply කරන්න." }, { quoted: mek });
                     }
                 }
 
-                // 4. STICKER COMMAND (.sticker)
+                // 4. STICKER COMMAND (.s / .sticker) - සම්පූර්ණයෙන්ම ස්ථාවර කරන ලදී
                 if (command === 'sticker' || command === 's') {
-                    const isQuotedImage = type === 'extendedTextMessage' && mek.message.extendedTextMessage.contextInfo?.quotedMessage?.imageMessage;
-                    const isImage = type === 'imageMessage';
+                    const isQuotedImage = msgType === 'extendedTextMessage' && mek.message.extendedTextMessage.contextInfo?.quotedMessage?.imageMessage;
+                    const isImage = msgType === 'imageMessage';
 
                     if (isImage || isQuotedImage) {
-                        const imgMessage = isImage ? mek.message.imageMessage : mek.message.extendedTextMessage.contextInfo.quotedMessage.imageMessage;
-                        const stream = await downloadContentFromMessage(imgMessage, 'image');
-                        let buffer = Buffer.from([]);
-                        for await (const chunk of stream) { buffer = Buffer.concat([buffer, chunk]); }
+                        await sock.sendMessage(from, { text: "⏳ *ස්ටිකරය සාදමින් පවතී...*" }, { quoted: mek });
+                        
+                        let targetMekForSticker = mek;
+                        if (isQuotedImage) {
+                            // Quoted මැසේජ් එකක් නම් ඒක වෙනම object එකක් විදියට සැකසීම
+                            targetMekForSticker = {
+                                message: mek.message.extendedTextMessage.contextInfo.quotedMessage
+                            };
+                        }
+
+                        // ආරක්ෂිතව Baileys ඩවුන්ලෝඩරය හරහා Image Buffer එක ගැනීම
+                        const buffer = await downloadMediaMessage(targetMekForSticker, 'buffer', {}, { logger: pino() });
+                        
+                        // WhatsApp වෙත කෙලින්ම sticker buffer එක යැවීම (Baileys auto-handles raw image to sticker format conversion)
                         await sock.sendMessage(from, { sticker: buffer }, { quoted: mek });
                     } else {
-                        await sock.sendMessage(from, { text: "❌ කරුණාකර ඡායාරූපයකට (Photo) .sticker ලෙස Reply කරන්න." }, { quoted: mek });
+                        await sock.sendMessage(from, { text: "❌ කරුණාකර ඡායාරූපයකට (Photo) පමණක් \`.s\` හෝ \`.sticker\` ලෙස Reply කරන්න." }, { quoted: mek });
                     }
                 }
 
-                // 5. SOCIAL MEDIA VIDEO DOWNLOADER (.dl)
+                // 5. SOCIAL MEDIA DOWNLOADER
                 if (command === 'dl' || command === 'download') {
                     const url = args[0];
                     if (!url) return await sock.sendMessage(from, { text: "❌ කරුණාකර වීඩියෝ ලින්ක් එකක් ඇතුළත් කරන්න." }, { quoted: mek });
@@ -174,19 +179,19 @@ _Powered by Vimukthi Thuhina_`;
                             const videoUrl = res.data.result.download_url || res.data.result.url;
                             await sock.sendMessage(from, { video: { url: videoUrl }, caption: "📥 *Downloaded by THUHI MD*" }, { quoted: mek });
                         } else {
-                            await sock.sendMessage(from, { text: "❌ වීඩියෝව ලබා ගැනීමට JavaScript දෝෂයක් පවතී." }, { quoted: mek });
+                            await sock.sendMessage(from, { text: "❌ වීඩියෝව ලබා ගැනීමට නොහැකි විය." });
                         }
                     } catch (e) {
-                        await sock.sendMessage(from, { text: "❌ සර්වර් දෝෂයකි. පසුව උත්සාහ කරන්න." });
+                        await sock.sendMessage(from, { text: "❌ ඩවුන්ලෝඩර් සර්වර් දෝෂයකි." });
                     }
                 }
             }
         } catch (err) {
-            console.log(err);
+            console.log("Error inside upsert: ", err);
         }
     });
 
-    // Anti-Delete Detector System
+    // 🚨 ANTI-DELETE DETECTOR SYSTEM (නැවත සකස් කරන ලද ක්‍රමවේදය)
     sock.ev.on('messages.update', async chatUpdate => {
         for (const { key, update } of chatUpdate) {
             if (update.messageStubType === 68 || update.revoke) {
@@ -196,7 +201,8 @@ _Powered by Vimukthi Thuhina_`;
                 if (oldMessage) {
                     const from = key.remoteJid;
                     const participant = key.participant || key.remoteJid;
-                    await sock.sendMessage(from, { text: `🚨 *ANTI-DELETE DETECTED!* \n\n*Sender:* @${participant.split('@')[0]} මැසේජ් එකක් مකා දැමුවා:`, mentions: [participant] });
+                    
+                    await sock.sendMessage(from, { text: `🚨 *ANTI-DELETE DETECTED!* \n\n*එවපු කෙනා:* @${participant.split('@')[0]} මැසේජ් එකක් මැකුවා. මකාදැමූ මැසේජ් එක පහතින් දැක්වේ:`, mentions: [participant] });
                     await sock.copyNForward(from, oldMessage, true);
                 }
             }
