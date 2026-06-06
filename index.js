@@ -13,7 +13,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // 🖼️ THUHI MD Logo Link
-const botLogoUrl = "https://ibb.co/1fn2R654";
+const botLogoUrl = "https://i.ibb.co/Z6gnPvV2/file-000000009be47207afef1535933c3f19.png";
 
 let sock = null;
 
