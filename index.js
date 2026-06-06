@@ -8,123 +8,32 @@ const {
 } = require("@whiskeysockets/baileys");
 const pino = require("pino");
 const express = require("express");
+const path = require("path");
 const axios = require("axios");
-const { Sticker, StickerTypes } = require('wa-sticker-formatter');
+const { Sticker, StickerTypes } = require('wa-sticker-formatter'); // 🖼️ Added for sticker conversion
 
-const app = express();
+const app = express(); // Fallback directly to express if 'report' is undefined
 const PORT = process.env.PORT || 3000;
 
+// 🖼️ THUHI MD Logo Link
 const botLogoUrl = "https://i.ibb.co/Z6gnPvV2/file-000000009be47207afef1535933c3f19.png";
+
+// 💰 SHRINKME CONFIGURATION
 const shrinkmeApi = "81bd69560df8d7ed1f3042d7bed34037908d4998"; 
 const targetUrl = "https://youtube.com/@VimukthiThuhina"; 
 
-let sock = null;
-const messageStore = {};
-const viewOnceStore = {}; 
-
-// --- 🛠️ HELPER FUNCTIONS (PLUGINS) ---
-
+// 🔗 ලින්ක් එක සහ එය පාවිච්චි කරන පියවරවල් සරලව සිංහලෙන් සකසන කොටස
 async function getEarnFooter() {
     let shortUrl = targetUrl; 
     try {
         const shortRes = await axios.get(`https://shrinkme.io/api?api=${shrinkmeApi}&url=${encodeURIComponent(targetUrl)}`);
-        if (shortRes.data?.status === "success") shortUrl = shortRes.data.shortenedUrl; 
-    } catch (e) { console.log("Shrinkme Error"); }
-    return `\n\n💵 *මුදල් උපයන්න:* ${shortUrl}`;
-}
-
-async function createSticker(buffer) {
-    const sticker = new Sticker(buffer, {
-        pack: 'THUHI MD Pack',       
-        author: 'Vimukthi Thuhina',  
-        type: StickerTypes.FULL,     
-        quality: 70                  
-    });
-    return await sticker.toBuffer();
-}
-
-async function downloadVideo(url) {
-    try {
-        const res = await axios.get(`https://api.dreaded.site/api/download?url=${encodeURIComponent(url)}`);
-        return res.data?.result?.download_url || res.data?.result?.url || null;
-    } catch (e) { return null; }
-}
-
-// --- 🚀 MAIN BOT START ---
-
-async function startThuhiMD() {
-    const { state, saveCreds } = await useMultiFileAuthState('./session');
-    const { version } = await fetchLatestBaileysVersion();
-
-    sock = makeWASocket({ version, auth: state, logger: pino({ level: 'silent' }) });
-    sock.ev.on('creds.update', saveCreds);
-
-    sock.ev.on('connection.update', async (update) => {
-        if (update.connection === 'open') console.log('THUHI MD READY!');
-        if (update.connection === 'close') startThuhiMD();
-    });
-
-    sock.ev.on('messages.upsert', async chatUpdate => {
-        if (chatUpdate.type !== 'notify') return;
-        const mek = chatUpdate.messages[0];
-        if (!mek.message) return;
-        
-        const from = mek.key.remoteJid;
-        const msgId = mek.key.id;
-        messageStore[msgId] = mek;
-
-        // One-View Store
-        if (mek.message.viewOnceMessageV2 || mek.message.viewOnceMessage) viewOnceStore[msgId] = mek;
-
-        // Command Parsing
-        const body = mek.message.conversation || mek.message.extendedTextMessage?.text || "";
-        if (!body.startsWith('.')) return;
-        
-        const args = body.slice(1).trim().split(/ +/);
-        const command = args.shift().toLowerCase();
-        const earnFooter = await getEarnFooter();
-
-        // 1. STICKER
-        if (command === 's' || command === 'sticker') {
-            const quote = mek.message.extendedTextMessage?.contextInfo?.quotedMessage;
-            const targetMek = quote ? { message: quote } : mek;
-            const buffer = await downloadMediaMessage(targetMek, 'buffer', {}, { logger: pino({ level: 'silent' }) });
-            const stkr = await createSticker(buffer);
-            await sock.sendMessage(from, { sticker: stkr }, { quoted: mek });
+        if (shortRes.data && shortRes.data.status === "success") {
+            shortUrl = shortRes.data.shortenedUrl; 
         }
-
-        // 2. DOWNLOADER
-        if (command === 'dl') {
-            const url = args[0];
-            const videoUrl = await downloadVideo(url);
-            if (videoUrl) await sock.sendMessage(from, { video: { url: videoUrl }, caption: "Done" + earnFooter });
-        }
-
-        // 3. OVP
-        if (command === 'ovp') {
-            const qId = mek.message.extendedTextMessage?.contextInfo?.stanzaId;
-            if (viewOnceStore[qId]) {
-                const buffer = await downloadMediaMessage(viewOnceStore[qId], 'buffer', {}, { logger: pino({ level: 'silent' }) });
-                await sock.sendMessage(from, { image: buffer, caption: "Recovered" + earnFooter });
-            }
-        }
-    });
-
-    // 4. ANTI-DELETE
-    sock.ev.on('messages.update', async chatUpdate => {
-        for (const { key, update } of chatUpdate) {
-            if (update.messageStubType === 68) {
-                const oldMsg = messageStore[key.id];
-                if (oldMsg) {
-                    await sock.sendMessage(key.remoteJid, { text: "මකාදැමූ පණිවිඩයක් හමු විය!" });
-                    // මෙතැනට අවශ්‍ය පරිදි downloadMediaMessage භාවිතයෙන් media යැවීම එකතු කරන්න.
-                }
-            }
-        }
-    });
-}
-
-app.listen(PORT, startThuhiMD);
+    } catch (shortErr) {
+        console.log("Shrinkme API error, bypassing...");
+    }
+    
     return `\n\n💵 *ඔබත් කැමතිද මුදල් උපයන්න මෙම link එකෙන් යන්න:*
 👉 ${shortUrl}
 
@@ -136,6 +45,7 @@ app.listen(PORT, startThuhiMD);
 
 let sock = null;
 
+// දත්ත තාවකාලිකව තබා ගන්නා මතක ගබඩාවන් (Memory Stores)
 const messageStore = {};
 const viewOnceStore = {}; 
 
@@ -193,7 +103,7 @@ _Powered by Vimukthi Thuhina_`;
             
             messageStore[msgId] = mek;
 
-            const isViewOnce = mek.message.viewOnceMessageV2 || mek.message.viewOnceMessage || mek.message.viewOnceMessageV2Extension;
+            const isViewOnce = mek.message.viewOnceMessageV2 || mek.message.viewOnceMessage;
             if (isViewOnce) {
                 viewOnceStore[msgId] = mek;
             }
@@ -255,17 +165,11 @@ _Powered by Vimukthi Thuhina_${earnFooterText}`;
 
                 // 3. ONE-VIEW RECOVERY (.ovp)
                 if (command === 'ovp') {
-                    const quotedMsg = mek.message.extendedTextMessage?.contextInfo?.quotedMessage;
                     const quotedMsgId = mek.message.extendedTextMessage?.contextInfo?.stanzaId;
-                    
                     if (quotedMsgId && viewOnceStore[quotedMsgId]) {
                         await sock.sendMessage(from, { text: "⏳ *One-View ඡායාරූපය බෝට් මඟින් සකසමින් පවතී...*" }, { quoted: mek });
                         const targetMek = viewOnceStore[quotedMsgId];
-                        const buffer = await downloadMediaMessage(targetMek, 'buffer', {}, { logger: pino() });
-                        await sock.sendMessage(from, { image: buffer, caption: `🔓 *THUHI MD: One-View Photo Saved Successfully!*${earnFooterText}` }, { quoted: mek });
-                    } else if (quotedMsg?.viewOnceMessageV2 || quotedMsg?.viewOnceMessage || quotedMsg?.viewOnceMessageV2Extension) {
-                        await sock.sendMessage(from, { text: "⏳ *One-View ඡායාරූපය බෝට් මඟින් සකසමින් පවතී...*" }, { quoted: mek });
-                        const targetMek = { message: quotedMsg };
+                        
                         const buffer = await downloadMediaMessage(targetMek, 'buffer', {}, { logger: pino() });
                         await sock.sendMessage(from, { image: buffer, caption: `🔓 *THUHI MD: One-View Photo Saved Successfully!*${earnFooterText}` }, { quoted: mek });
                     } else {
@@ -273,27 +177,35 @@ _Powered by Vimukthi Thuhina_${earnFooterText}`;
                     }
                 }
 
-                // 4. STICKER COMMAND (.s / .sticker)
+                // 4. STICKER COMMAND (.s / .sticker) - FIXED SECTION
                 if (command === 'sticker' || command === 's') {
                     const isQuotedImage = msgType === 'extendedTextMessage' && mek.message.extendedTextMessage.contextInfo?.quotedMessage?.imageMessage;
                     const isImage = msgType === 'imageMessage';
 
                     if (isImage || isQuotedImage) {
                         await sock.sendMessage(from, { text: "⏳ *ස්ටිකරය සාදමින් පවතී...*" }, { quoted: mek });
+                        
                         let targetMekForSticker = mek;
                         if (isQuotedImage) {
-                            targetMekForSticker = { message: mek.message.extendedTextMessage.contextInfo.quotedMessage };
+                            targetMekForSticker = {
+                                message: mek.message.extendedTextMessage.contextInfo.quotedMessage
+                            };
                         }
 
+                        // Download the image buffer
                         const buffer = await downloadMediaMessage(targetMekForSticker, 'buffer', {}, { logger: pino() });
+                        
+                        // Process and build the proper WebP Sticker with Metadata
                         const sticker = new Sticker(buffer, {
                             pack: 'THUHI MD Pack',       
                             author: 'Vimukthi Thuhina',  
                             type: StickerTypes.FULL,     
                             quality: 70                  
                         });
+
                         const stickerBuffer = await sticker.toBuffer();
 
+                        // Send the processed sticker webp buffer
                         await sock.sendMessage(from, { sticker: stickerBuffer }, { quoted: mek });
                         await sock.sendMessage(from, { text: `🎉 *ඔබේ ස්ටිකරය සාර්ථකව සකසා ඇත!*${earnFooterText}` }, { quoted: mek });
                     } else {
@@ -301,28 +213,25 @@ _Powered by Vimukthi Thuhina_${earnFooterText}`;
                     }
                 }
 
-                // 5. SOCIAL MEDIA DOWNLOADER WITH BRAND NEW FAST API (100% FIXED)
+                // 5. SOCIAL MEDIA DOWNLOADER WITH SHRINKME SYSTEM
                 if (command === 'dl' || command === 'download') {
                     const url = args[0];
-                    if (!url) return await sock.sendMessage(from, { text: `❌ කරුණාකර වීඩියෝ ලින්ක් එකක් ඇතුළත් කරන්න.${earnFooterText}` }, { quoted: mek });
+                    if (!url) return await sock.sendMessage(from, { text: "❌ කරුණාකර වීඩියෝ ලින්ක් එකක් ඇතුළත් කරන්න." }, { quoted: mek });
 
                     await sock.sendMessage(from, { text: "⏳ *වීඩියෝව සකසමින් පවතී...*" });
 
                     try {
-                        // 🚀 අලුත්ම සහ සුපිරියටම වැඩ කරන Global Downloader API එකක් මෙතනට දැම්මා මචං
-                        const res = await axios.get(`https://api.giftedtech.my.id/api/download/allinone?url=${encodeURIComponent(url)}`);
-                        
-                        if (res.data && res.data.success && res.data.result) {
-                            const videoUrl = res.data.result.url || res.data.result.videoUrl || res.data.result.mp4;
+                        const res = await axios.get(`https://api.dreaded.site/api/download?url=${encodeURIComponent(url)}`);
+                        if (res.data && res.data.result) {
+                            const videoUrl = res.data.result.download_url || res.data.result.url;
                             const captionText = `📥 *Downloaded by THUHI MD*${earnFooterText}`;
 
                             await sock.sendMessage(from, { video: { url: videoUrl }, caption: captionText }, { quoted: mek });
                         } else {
-                            await sock.sendMessage(from, { text: `❌ වීඩියෝව සර්වර් එකෙන් ලබා ගැනීමට නොහැකි විය.${earnFooterText}` });
+                            await sock.sendMessage(from, { text: `❌ වීඩියෝව ලබා ගැනීමට නොහැකි විය.${earnFooterText}` });
                         }
                     } catch (e) {
-                        console.log("Downloader Error: ", e);
-                        await sock.sendMessage(from, { text: `❌ ඩවුන්ලෝඩර් සර්වර් එකෙහි දෝෂයකි. කරුණාකර පසුව උත්සාහ කරන්න.${earnFooterText}` });
+                        await sock.sendMessage(from, { text: `❌ ඩවුන්ලෝඩර් සර්වර් දෝෂයකි.${earnFooterText}` });
                     }
                 }
             }
