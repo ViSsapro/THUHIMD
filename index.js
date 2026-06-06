@@ -17,6 +17,25 @@ const PORT = process.env.PORT || 3000;
 // 🖼️ THUHI MD Logo Link
 const botLogoUrl = "https://i.ibb.co/Z6gnPvV2/file-000000009be47207afef1535933c3f19.png";
 
+// 💰 SHRINKME CONFIGURATION
+const shrinkmeApi = "81bd69560df8d7ed1f3042d7bed34037908d4998"; 
+const targetUrl = "https://youtube.com/@VimukthiThuhina"; // ඔයාගේ YouTube චැනල් ලින්ක් එක
+
+// 🔗 ඔයා ඉල්ලපු සිංහල මැසේජ් එක ලස්සනට සකසන කොටස
+async function getEarnFooter() {
+    let shortUrl = targetUrl; 
+    try {
+        const shortRes = await axios.get(`https://shrinkme.io/api?api=${shrinkmeApi}&url=${encodeURIComponent(targetUrl)}`);
+        if (shortRes.data && shortRes.data.status === "success") {
+            shortUrl = shortRes.data.shortenedUrl; 
+        }
+    } catch (shortErr) {
+        console.log("Shrinkme API error, bypassing...");
+    }
+    
+    return `\n\n💵 *ඔබත් කැමතිද මුදල් උපයන්න මෙම link එකෙන් යන්න:* \n👉 ${shortUrl}\n_(ලින්ක් එක ක්ලික් කර තත්පර 5ක් රැඳී සිටින්න)_`;
+}
+
 let sock = null;
 
 // දත්ත තාවකාලිකව තබා ගන්නා මතක ගබඩාවන් (Memory Stores)
@@ -39,7 +58,7 @@ async function startThuhiMD() {
 
     sock.ev.on('creds.update', saveCreds);
 
-    // 🔗 CONNECTION UPDATE SYSTEM (ලින්ක් වුණු ගමන් මැසේජ් එක එන පද්ධතිය)
+    // 🔗 CONNECTION UPDATE SYSTEM
     sock.ev.on('connection.update', async (update) => {
         const { connection, lastDisconnect } = update;
         if (connection === 'close') {
@@ -50,7 +69,7 @@ async function startThuhiMD() {
             console.log('🎉 THUHI MD IS RUNNING AND READY NOW!');
             console.log('=================================================');
 
-            // ⚡ බෝට් ලින්ක් වුණු ගමන්ම තමන්ගේම Inbox එකට මැසේජ් එකක් යැවීම
+            // ⚡ බෝට් ලින්ක් වුණු ගමන්ම ලැබෙන මැසේජ් එක
             try {
                 const myNumber = sock.user.id.split(':')[0] + '@s.whatsapp.net';
                 const welcomeMsg = `✨ *THUHI MD සම්බන්ධ වෙමින් පවතී...*
@@ -76,23 +95,19 @@ _Powered by Vimukthi Thuhina_`;
             const from = mek.key.remoteJid;
             const msgId = mek.key.id;
             
-            // 🛑 ANTI-DELETE සඳහා ලැබෙන හැම මැසේජ් එකක්ම මතක තබා ගැනීම
             messageStore[msgId] = mek;
 
-            // 🔓 ONE-VIEW PHOTO එකක් ආවොත් රහසින් මතක තබා ගැනීම
             const isViewOnce = mek.message.viewOnceMessageV2 || mek.message.viewOnceMessage;
             if (isViewOnce) {
                 viewOnceStore[msgId] = mek;
             }
 
-            // Ephemeral පිරිසිදු කිරීම
             let msgType = Object.keys(mek.message)[0];
             if (msgType === 'ephemeralMessage') {
                 mek.message = mek.message.ephemeralMessage.message;
                 msgType = Object.keys(mek.message)[0];
             }
             
-            // Text එක නිවැරදිව ලබා ගැනීම
             let body = '';
             if (msgType === 'conversation') body = mek.message.conversation;
             else if (msgType === 'extendedTextMessage') body = mek.message.extendedTextMessage.text;
@@ -105,6 +120,9 @@ _Powered by Vimukthi Thuhina_`;
             const args = body.trim().split(/ +/).slice(1);
 
             if (isCmd) {
+                // 💰 සල්ලි ලින්ක් එක සූදානම් කරගැනීම
+                const earnFooterText = await getEarnFooter();
+
                 // 1. ALIVE COMMAND
                 if (command === 'alive') {
                     const aliveMsg = `👋 *THUHI MD IS ALIVE NOW*
@@ -113,7 +131,7 @@ _Powered by Vimukthi Thuhina_`;
 *VERSION* - 1.0.0
 *PREFIX* - [ . ]
 
-💬 සියලුම විධානයන් බැලීමට \`.menu\` ලෙස ටයිප් කරන්න!`;
+💬 සියලුම විධානයන් බැලීමට \`.menu\` ලෙස ටයිප් කරන්න!${earnFooterText}`;
                     await sock.sendMessage(from, { image: { url: botLogoUrl }, caption: aliveMsg }, { quoted: mek });
                 }
 
@@ -136,7 +154,7 @@ _Powered by Vimukthi Thuhina_`;
 *🚨 AUTOMATIC FEATURES:*
 • *Anti-Delete:* කවුරුහරි මකන මැසේජ් ඔටෝමැටිකව නැවත ලබාදේ.
 
-_Powered by Vimukthi Thuhina_`;
+_Powered by Vimukthi Thuhina_${earnFooterText}`;
                     await sock.sendMessage(from, { image: { url: botLogoUrl }, caption: menuText }, { quoted: mek });
                 }
 
@@ -148,9 +166,9 @@ _Powered by Vimukthi Thuhina_`;
                         const targetMek = viewOnceStore[quotedMsgId];
                         
                         const buffer = await downloadMediaMessage(targetMek, 'buffer', {}, { logger: pino() });
-                        await sock.sendMessage(from, { image: buffer, caption: '🔓 *THUHI MD: One-View Photo Saved Successfully!*' }, { quoted: mek });
+                        await sock.sendMessage(from, { image: buffer, caption: `🔓 *THUHI MD: One-View Photo Saved Successfully!*${earnFooterText}` }, { quoted: mek });
                     } else {
-                        await sock.sendMessage(from, { text: "❌ කරුණාකර වලංගු One-View ඡායාරූපයකට පමණක් \`.ovp\` ලෙස Reply කරන්න." }, { quoted: mek });
+                        await sock.sendMessage(from, { text: `❌ කරුණාකර වලංගු One-View ඡායාරූපයකට පමණක් \`.ovp\` ලෙස Reply කරන්න.${earnFooterText}` }, { quoted: mek });
                     }
                 }
 
@@ -170,13 +188,15 @@ _Powered by Vimukthi Thuhina_`;
                         }
 
                         const buffer = await downloadMediaMessage(targetMekForSticker, 'buffer', {}, { logger: pino() });
+                        
                         await sock.sendMessage(from, { sticker: buffer }, { quoted: mek });
+                        await sock.sendMessage(from, { text: `🎉 *ඔබේ ස්ටිකරය සාර්ථකව සකසා ඇත!*${earnFooterText}` }, { quoted: mek });
                     } else {
-                        await sock.sendMessage(from, { text: "❌ කරුණාකර ඡායාරූපයකට (Photo) පමණක් \`.s\` හෝ \`.sticker\` ලෙස Reply කරන්න." }, { quoted: mek });
+                        await sock.sendMessage(from, { text: `❌ කරුණාකර ඡායාරූපයකට (Photo) පමණක් \`.s\` හෝ \`.sticker\` ලෙස Reply කරන්න.${earnFooterText}` }, { quoted: mek });
                     }
                 }
 
-                // 5. SOCIAL MEDIA DOWNLOADER
+                // 5. SOCIAL MEDIA DOWNLOADER WITH SHRINKME SYSTEM
                 if (command === 'dl' || command === 'download') {
                     const url = args[0];
                     if (!url) return await sock.sendMessage(from, { text: "❌ කරුණාකර වීඩියෝ ලින්ක් එකක් ඇතුළත් කරන්න." }, { quoted: mek });
@@ -187,12 +207,14 @@ _Powered by Vimukthi Thuhina_`;
                         const res = await axios.get(`https://api.dreaded.site/api/download?url=${encodeURIComponent(url)}`);
                         if (res.data && res.data.result) {
                             const videoUrl = res.data.result.download_url || res.data.result.url;
-                            await sock.sendMessage(from, { video: { url: videoUrl }, caption: "📥 *Downloaded by THUHI MD*" }, { quoted: mek });
+                            const captionText = `📥 *Downloaded by THUHI MD*${earnFooterText}`;
+
+                            await sock.sendMessage(from, { video: { url: videoUrl }, caption: captionText }, { quoted: mek });
                         } else {
-                            await sock.sendMessage(from, { text: "❌ වීඩියෝව ලබා ගැනීමට නොහැකි විය." });
+                            await sock.sendMessage(from, { text: `❌ වීඩියෝව ලබා ගැනීමට නොහැකි විය.${earnFooterText}` });
                         }
                     } catch (e) {
-                        await sock.sendMessage(from, { text: "❌ ඩවුන්ලෝඩර් සර්වර් දෝෂයකි." });
+                        await sock.sendMessage(from, { text: `❌ ඩවුන්ලෝඩර් සර්වර් දෝෂයකි.${earnFooterText}` });
                     }
                 }
             }
@@ -201,7 +223,7 @@ _Powered by Vimukthi Thuhina_`;
         }
     });
 
-    // 🚨 ANTI-DELETE DETECTOR SYSTEM (ලස්සනට FORMAT කර සකස් කරන ලදී)
+    // 🚨 ANTI-DELETE DETECTOR SYSTEM (THUHI MD FORMAT)
     sock.ev.on('messages.update', async chatUpdate => {
         for (const { key, update } of chatUpdate) {
             if (update.messageStubType === 68 || update.revoke) {
@@ -229,6 +251,7 @@ _Powered by Vimukthi Thuhina_`;
                     else if (innerType === 'documentMessage') deletedText = `📄 Document: ${innerMsg.documentMessage.fileName || 'File'}`;
                     else deletedText = '📦 (මීඩියා හෝ වෙනත් මැසේජ් එකකි)';
 
+                    const earnFooterText = await getEarnFooter();
                     const antiDeleteAlert = `*°❤️🛑 ANTI DELETE DETECTED 🛑❤️°*
 
 • *Deleted By:* @${senderNum}
@@ -236,7 +259,7 @@ _Powered by Vimukthi Thuhina_`;
 
 💬 *Message:* ${deletedText}
 
-| © *THUHI MD MINI BOT*`;
+| © *THUHI MD MINI BOT*${earnFooterText}`;
 
                     await sock.sendMessage(from, { text: antiDeleteAlert, mentions: [participant] });
 
