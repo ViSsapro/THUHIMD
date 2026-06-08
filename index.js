@@ -221,7 +221,7 @@ _Powered by Vimukthi Thuhina_${earnFooterText}`;
                     await sock.sendMessage(from, { text: "⏳ *වීඩියෝව සකසමින් පවතී...*" });
 
                     try {
-                        const res = await axios.get(`https://api.dreaded.site/api/download?url=${encodeURIComponent(url)}`);
+                        const res = await axios.get('https://podda-api.zone.id/ytmp4?url=${encodeURIComponent(url)}`);
                         if (res.data && res.data.result) {
                             const videoUrl = res.data.result.download_url || res.data.result.url;
                             const captionText = `📥 *Downloaded by THUHI MD*${earnFooterText}`;
