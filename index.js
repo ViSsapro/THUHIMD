@@ -213,7 +213,7 @@ _Powered by Vimukthi Thuhina_${earnFooterText}`;
                     }
                 }
 
-                // 5. SOCIAL MEDIA DOWNLOADER WITH SHRINKME SYSTEM
+// 5. SOCIAL MEDIA DOWNLOADER (API රහිතව)
                 if (command === 'dl' || command === 'download') {
                     const url = args[0];
                     if (!url) return await sock.sendMessage(from, { text: "❌ කරුණාකර වීඩියෝ ලින්ක් එකක් ඇතුළත් කරන්න." }, { quoted: mek });
@@ -221,24 +221,27 @@ _Powered by Vimukthi Thuhina_${earnFooterText}`;
                     await sock.sendMessage(from, { text: "⏳ *වීඩියෝව සකසමින් පවතී...*" });
 
                     try {
-                        const res = await axios.get(`https://podda-api.zone.id/ytmp4?url=${encodeURIComponent(url)}`);
-                        if (res.data && res.data.result) {
-                            const videoUrl = res.data.result.download_url || res.data.result.url;
-                            const captionText = `📥 *Downloaded by THUHI MD*${earnFooterText}`;
+                        // @dark-yasiya/yt-dl.js භාවිතා කරමින්
+                        const ytdl = require('@dark-yasiya/yt-dl.js');
+                        const result = await ytdl.dl(url); // මෙතැනදී කෙලින්ම URL එක ලබා ගනී
 
-                            await sock.sendMessage(from, { video: { url: videoUrl }, caption: captionText }, { quoted: mek });
+                        if (result && result.video) {
+                            const captionText = `📥 *Downloaded by THUHI MD*${earnFooterText}`;
+                            
+                            // වීඩියෝව යැවීම
+                            await sock.sendMessage(from, { 
+                                video: { url: result.video }, 
+                                caption: captionText 
+                            }, { quoted: mek });
                         } else {
                             await sock.sendMessage(from, { text: `❌ වීඩියෝව ලබා ගැනීමට නොහැකි විය.${earnFooterText}` });
                         }
                     } catch (e) {
-                        await sock.sendMessage(from, { text: `❌ ඩවුන්ලෝඩර් සර්වර් දෝෂයකි.${earnFooterText}` });
+                        console.log(e); // දෝෂය කුමක්දැයි බැලීමට
+                        await sock.sendMessage(from, { text: `❌ වීඩියෝව බාගත කිරීමේ දෝෂයකි.${earnFooterText}` });
                     }
                 }
-            }
-        } catch (err) {
-            console.log("Error inside upsert: ", err);
-        }
-    });
+
 
     // 🚨 ANTI-DELETE DETECTOR SYSTEM
     sock.ev.on('messages.update', async chatUpdate => {
