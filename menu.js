@@ -1,30 +1,32 @@
-// menu.js
 module.exports = {
     execute: async (sock, mek, from, botLogoUrl, earnFooterText) => {
         
-        // 1. මුලින්ම Logo පින්තූරය යවනවා
+        const menuText = `*╭────────═✪═────────╮*
+  *◄◯ 𝐓𝐇𝐔𝐇𝐈 𝐌𝐃 𝐌𝐄𝐍𝐔  ◯►*
+*╰────────═✪═────────╯*
+
+👋 හෙලෝ, මම THUHI MD බෝට්. පහත විධාන භාවිතා කරන්න:
+
+*📥 SOCIAL MEDIA DOWNLOAD*
+• \`.dl [link]\` - වීඩියෝ බාගත කිරීම.
+
+*🖼️ STICKER & PHOTO TOOLS*
+• \`.s\` හෝ \`.sticker\` - පින්තූරයකට Reply කර ස්ටිකර් සාදන්න.
+• \`.pic\` - ස්ටිකරයකට Reply කර පින්තූරයක් සාදන්න.
+• \`.vid\` - ස්ටිකරයකට Reply කර වීඩියෝවක් සාදන්න.
+
+*🔓 WHATSAPP TOOLS*
+• \`.ovp\` - One-View පින්තූරයක් ලබාගැනීම.
+• \`.ovv\` - One-View හඬ පටයක් (Voice) ලබාගැනීම.
+• \`.dp\` - Profile පින්තූර ලබාගැනීම.
+
+${earnFooterText}
+
+_Powered by Vimukthi Thuhina_`;
+
         await sock.sendMessage(from, { 
             image: { url: botLogoUrl }, 
-            caption: `*╭────────═✪═────────╮*\n  *◄◯ 𝐓𝐇𝐔𝐇𝐈 𝐌𝐃 𝐌𝐄𝐍𝐔 ◯►*\n*╰────────═✪═────────╯*\n\n👋 හෙලෝ, පහත බොත්තම ඔබා ඔබට අවශ්‍ය විධාන ලැයිස්තුව තෝරාගන්න.${earnFooterText}`
-        }, { quoted: mek });
-
-        // 2. පසුව මෙනු ලැයිස්තුව (List Message) යවනවා
-        const sections = [{
-            title: "🏵 𝐓𝐡𝐮𝐡𝐢 𝐌𝐝 𝗖𝗼𝗺𝗺𝗮𝗻𝗱 𝗣𝗮𝗻𝗲𝗹",
-            rows: [
-                { title: '🏵 HELP-LIST', rowId: '.help', description: 'බෝට් එකේ මූලික විස්තර.' },
-                { title: '🏵 DOWNLOAD-LIST', rowId: '.dl', description: 'Youtube, FB, Insta බාගත කිරීම්.' },
-                { title: '🏵 STICKER-LIST', rowId: '.sticker', description: 'ඡායාරූප ස්ටිකර් කිරීම.' },
-                { title: '🏵 WHATSAPP TOOLS', rowId: '.ovp', description: 'One-View ඡායාරූප ලබාගැනීම.' }
-            ]
-        }];
-
-        await sock.sendMessage(from, {
-            text: "👆 *පහත '𝗠𝗘𝗡𝗨 𝗟𝗜𝗦𝗧' බොත්තම ඔබන්න*",
-            footer: '© 2026 THUHI MD',
-            buttonText: '𝗠𝗘𝗡𝗨 𝗟𝗜𝗦𝗧',
-            sections: sections,
-            listType: 1
+            caption: menuText 
         }, { quoted: mek });
     }
 };
