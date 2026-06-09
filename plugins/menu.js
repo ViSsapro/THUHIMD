@@ -9,10 +9,8 @@ module.exports = {
 *╰────────═✪═────────╯*
 
 👋 හෙලෝ, මම THUHI MD බෝට් එක. 
-පහත බොත්තම ඔබා විධාන ලැයිස්තුව බලන්න.
-${footer}`;
+පහත බොත්තම ඔබා විධාන ලැයිස්තුව බලන්න.${footer}`;
 
-        // ප්ලගින් ලැයිස්තුව (THUHI MD නම යොදා ඇත)
         const sections = [{
             title: "💎 𝐓𝐇𝐔𝐇𝐈 𝐌𝐃 𝐂𝐎𝐌𝐌𝐀𝐍𝐃 𝐏𝐀𝐍𝐄𝐋",
             rows: [
@@ -23,13 +21,12 @@ ${footer}`;
             ]
         }];
 
+        // නිවැරදි List Message ව්‍යුහය
         await sock.sendMessage(from, {
             text: menuText,
-            footer: 'Powered by THUHI MD',
-            title: 'THUHI MD MENU',
-            sections: sections,
             buttonText: 'මෙනුව බලන්න',
-            type: 1 
+            sections: sections,
+            listType: 1
         }, { quoted: mek });
     }
 };
