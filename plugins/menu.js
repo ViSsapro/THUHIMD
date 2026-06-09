@@ -1,0 +1,35 @@
+module.exports = {
+    name: 'menu',
+    commands: ['menu', 'help', 'amenu'],
+    execute: async (sock, mek, args, from, command, { botLogoUrl, getEarnFooter }) => {
+        const footer = await getEarnFooter();
+        
+        const menuText = `*╭────────═✪═────────╮*
+   *◄◯ THUHI MD MENU ◯►*
+*╰────────═✪═────────╯*
+
+👋 හෙලෝ, මම THUHI MD බෝට් එක. 
+පහත බොත්තම ඔබා විධාන ලැයිස්තුව බලන්න.
+${footer}`;
+
+        // ප්ලගින් ලැයිස්තුව (THUHI MD නම යොදා ඇත)
+        const sections = [{
+            title: "💎 𝐓𝐇𝐔𝐇𝐈 𝐌𝐃 𝐂𝐎𝐌𝐌𝐀𝐍𝐃 𝐏𝐀𝐍𝐄𝐋",
+            rows: [
+                { title: '🏵 HELP-LIST', rowId: '.help', description: 'බෝට් එකේ මූලික විස්තර සහ උපකාර.' },
+                { title: '🏵 MEDIA-LIST', rowId: '.media', description: 'වීඩියෝ සහ හඬ පට සැකසුම්.' },
+                { title: '🏵 DOWNLOAD-LIST', rowId: '.dl', description: 'වීඩියෝ සහ ගීත බාගත කිරීම.' },
+                { title: '🏵 ADMIN-LIST', rowId: '.admin', description: 'කණ්ඩායම් පාලන විධාන.' }
+            ]
+        }];
+
+        await sock.sendMessage(from, {
+            text: menuText,
+            footer: 'Powered by THUHI MD',
+            title: 'THUHI MD MENU',
+            sections: sections,
+            buttonText: 'මෙනුව බලන්න',
+            type: 1 
+        }, { quoted: mek });
+    }
+};
