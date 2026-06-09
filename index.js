@@ -4,12 +4,11 @@ const express = require("express");
 const fs = require('fs');
 const path = require('path');
 const axios = require("axios");
-const { Sticker, StickerTypes } = require('wa-sticker-formatter');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// ප්ලගින් ලෝඩ් කිරීමේ පද්ධතිය
+// ප්ලගින් පද්ධතිය
 const plugins = {};
 const pluginPath = path.join(__dirname, 'plugins');
 if (!fs.existsSync(pluginPath)) fs.mkdirSync(pluginPath);
@@ -29,12 +28,12 @@ async function getEarnFooter() {
         const shortRes = await axios.get(`https://shrinkme.io/api?api=${shrinkmeApi}&url=${encodeURIComponent(targetUrl)}`);
         if (shortRes.data && shortRes.data.status === "success") shortUrl = shortRes.data.shortenedUrl;
     } catch (e) { console.log("Shrinkme API error"); }
-    return `\n\n💵 *මුදල් උපයන්න මෙම link එකෙන් යන්න:* 👉 ${shortUrl}`;
+    return `\n\n💵 *මුදල් උපයන්න මෙතැනින්:* 👉 ${shortUrl}`;
 }
 
 let sock = null;
-const messageStore = {};
-const viewOnceStore = {};
+const messageStore = {}; // Anti-delete සඳහා
+const viewOnceStore = {}; // OVP සඳහා
 
 async function startThuhiMD() {
     const { state, saveCreds } = await useMultiFileAuthState('./session');
@@ -51,28 +50,46 @@ async function startThuhiMD() {
         }
     });
 
+    // 1. මැසේජ් ගබඩා කිරීම සහ Command ක්‍රියාත්මක කිරීම
     sock.ev.on('messages.upsert', async chatUpdate => {
         if (chatUpdate.type !== 'notify') return;
         const mek = chatUpdate.messages[0];
         if (!mek.message) return;
-        const from = mek.key.remoteJid;
         
+        const from = mek.key.remoteJid;
+        const msgId = mek.key.id;
+        messageStore[msgId] = mek; // ගබඩා කිරීම
+
+        if (mek.message.viewOnceMessageV2 || mek.message.viewOnceMessage) viewOnceStore[msgId] = mek;
+
         let msgType = Object.keys(mek.message)[0];
         let body = (msgType === 'conversation') ? mek.message.conversation : 
                    (msgType === 'extendedTextMessage') ? mek.message.extendedTextMessage.text : '';
 
         const prefix = '.';
-        const isCmd = body.startsWith(prefix);
-        const command = isCmd ? body.slice(prefix.length).trim().split(/ +/).shift().toLowerCase() : undefined;
+        const command = body.startsWith(prefix) ? body.slice(prefix.length).trim().split(/ +/).shift().toLowerCase() : undefined;
         const args = body.trim().split(/ +/).slice(1);
 
-        if (isCmd) {
-            let executed = false;
+        if (command) {
             for (const p in plugins) {
                 if (plugins[p].commands && plugins[p].commands.includes(command)) {
-                    await plugins[p].execute(sock, mek, args, from, command, { downloadMediaMessage, pino, getEarnFooter, botLogoUrl });
-                    executed = true;
+                    await plugins[p].execute(sock, mek, args, from, command, { downloadMediaMessage, pino, getEarnFooter, botLogoUrl, messageStore, viewOnceStore });
                     break;
+                }
+            }
+        }
+    });
+
+    // 2. Anti-Delete පද්ධතිය
+    sock.ev.on('messages.update', async chatUpdate => {
+        for (const { key, update } of chatUpdate) {
+            if (update.messageStubType === 68 || update.revoke) {
+                const oldMessage = messageStore[key.id];
+                if (oldMessage) {
+                    const from = key.remoteJid;
+                    const footer = await getEarnFooter();
+                    await sock.sendMessage(from, { text: `🛑 *මකාදැමූ මැසේජ් එකක් හමු විය!* \n\n_Powered by THUHI MD_${footer}` });
+                    await sock.sendMessage(from, { forward: oldMessage });
                 }
             }
         }
