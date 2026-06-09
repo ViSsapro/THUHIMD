@@ -7,12 +7,14 @@ const axios = require("axios");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// ගෝලීය දත්ත (Global Variables)
+global.messageStore = {};
+global.viewOnceStore = {}; 
+global.sock = null; // මෙතැනsock එක global කරනවා
+
 const botLogoUrl = "https://i.ibb.co/Z6gnPvV2/file-000000009be47207afef1535933c3f19.png";
 const shrinkmeApi = "81bd69560df8d7ed1f3042d7bed34037908d4998"; 
 const targetUrl = "https://youtube.com/@VimukthiThuhina"; 
-
-global.messageStore = {};
-global.viewOnceStore = {}; 
 
 async function getEarnFooter() {
     let shortUrl = targetUrl; 
@@ -26,16 +28,28 @@ async function getEarnFooter() {
 const menuCmd = require('./menu.js');
 const mediaCmd = require('./media.js');
 
-let sock = null;
 app.use(express.static(path.join(__dirname)));
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
 
+// Pair Code API එක
+app.get('/code', async (req, res) => {
+    let num = req.query.number;
+    if (!global.sock) return res.status(500).json({ error: "Server not ready" });
+    try {
+        let code = await global.sock.requestPairingCode(num.replace(/[^0-9]/g, "").trim());
+        res.json({ code: code });
+    } catch (error) {
+        res.status(500).json({ error: "Error" });
+    }
+});
+
 async function startThuhiMD() {
     const { state, saveCreds } = await useMultiFileAuthState('./session');
-    sock = makeWASocket({ auth: state, logger: pino({ level: 'silent' }) });
-    sock.ev.on('creds.update', saveCreds);
+    global.sock = makeWASocket({ auth: state, logger: pino({ level: 'silent' }) });
+    
+    global.sock.ev.on('creds.update', saveCreds);
 
-    sock.ev.on('messages.upsert', async chatUpdate => {
+    global.sock.ev.on('messages.upsert', async chatUpdate => {
         if (chatUpdate.type !== 'notify') return;
         const mek = chatUpdate.messages[0];
         if (!mek.message) return;
@@ -53,11 +67,11 @@ async function startThuhiMD() {
         const footer = await getEarnFooter();
 
         if (command === 'menu' || command === 'help') {
-            await menuCmd.execute(sock, mek, from, botLogoUrl, footer);
+            await menuCmd.execute(global.sock, mek, from, botLogoUrl, footer);
         } else if (command === 'dl-final') {
-            await mediaCmd.downloadFinal(sock, mek, from, args[0]);
+            await mediaCmd.downloadFinal(global.sock, mek, from, args[0]);
         } else if (['dl', 's', 'sticker', 'ovp'].includes(command)) {
-            await mediaCmd.execute(sock, mek, from, command, args, botLogoUrl, footer);
+            await mediaCmd.execute(global.sock, mek, from, command, args, botLogoUrl, footer);
         }
     });
 }
