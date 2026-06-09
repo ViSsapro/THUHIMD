@@ -75,5 +75,9 @@ async function startThuhiMD() {
         }
     });
 }
+// මෙය බෝට් එක නින්දට යාම වළක්වයි
+setInterval(() => {
+    console.log("Keeping bot alive...");
+}, 30000); 
 
 app.listen(PORT, () => startThuhiMD());
