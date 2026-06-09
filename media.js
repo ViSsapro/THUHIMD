@@ -1,51 +1,67 @@
-// media.js
-module.exports = {
-    download: async (sock, mek, from, args, botLogoUrl, earnFooterText) => {
-        const url = args[0];
-        if (!url) return await sock.sendMessage(from, { text: "❌ කරුණාකර වීඩියෝ ලින්ක් එකක් දෙන්න." });
+const { default: makeWASocket, useMultiFileAuthState, DisconnectReason, fetchLatestBaileysVersion, delay, downloadMediaMessage } = require("@whiskeysockets/baileys");
+const pino = require("pino");
+const express = require("express");
+const path = require("path");
+const axios = require("axios");
 
-        await sock.sendMessage(from, { text: "🔍 *වීඩියෝව පරීක්ෂා කරමින් පවතී...*" });
+const app = express();
+const PORT = process.env.PORT || 3000;
 
-        // API එකෙන් විස්තර ලබා ගැනීම
-        const res = await require("axios").get(`https://api.dreaded.site/api/download?url=${encodeURIComponent(url)}`);
-        const data = res.data.result;
+// ලින්ක් සහ අනෙකුත් දත්ත
+const botLogoUrl = "https://i.ibb.co/Z6gnPvV2/file-000000009be47207afef1535933c3f19.png";
+const shrinkmeApi = "81bd69560df8d7ed1f3042d7bed34037908d4998"; 
+const targetUrl = "https://youtube.com/@VimukthiThuhina"; 
 
-        if (!data) return await sock.sendMessage(from, { text: "❌ වීඩියෝව සොයාගත නොහැකි විය." });
+async function getEarnFooter() {
+    let shortUrl = targetUrl; 
+    try {
+        const shortRes = await axios.get(`https://shrinkme.io/api?api=${shrinkmeApi}&url=${encodeURIComponent(targetUrl)}`);
+        if (shortRes.data && shortRes.data.status === "success") shortUrl = shortRes.data.shortenedUrl; 
+    } catch (e) { console.log("Shrinkme API error"); }
+    return `\n\n💵 *මුදල් උපයන්න ලින්ක් එක:* ${shortUrl}\n\n📌 *පියවර 3:* 1️⃣ Close/X ඔබන්න 2️⃣ 'Click here to continue' ඔබන්න 3️⃣ තත්පර 5ක් ඉඳලා 'Get Link' ඔබන්න.`;
+}
 
-        // Thumbnail සහ තොරතුරු සහිත මැසේජ් එක
-        const caption = `*🎬 THUHI MD VIDEO DOWNLOADER*
+const menuCmd = require('./menu.js');
+const mediaCmd = require('./media.js');
 
-*Title:* ${data.title}
-*Duration:* ${data.duration}
+let sock = null;
+app.use(express.static(path.join(__dirname)));
+app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
 
-👇 *පහත Quality එකක් තෝරන්න:*`;
+async function startThuhiMD() {
+    const { state, saveCreds } = await useMultiFileAuthState('./session');
+    sock = makeWASocket({ auth: state, logger: pino({ level: 'silent' }), printQRInTerminal: true });
+    
+    sock.ev.on('creds.update', saveCreds);
+    sock.ev.on('connection.update', (update) => { if (update.connection === 'close') startThuhiMD(); });
 
-        await sock.sendMessage(from, {
-            image: { url: data.thumbnail },
-            caption: caption + earnFooterText
-        }, { quoted: mek });
+    sock.ev.on('messages.upsert', async chatUpdate => {
+        if (chatUpdate.type !== 'notify') return;
+        const mek = chatUpdate.messages[0];
+        if (!mek.message) return;
+        const from = mek.key.remoteJid;
+        
+        const body = mek.message.conversation || mek.message.extendedTextMessage?.text || "";
+        const isCmd = body.startsWith('.');
+        const command = isCmd ? body.slice(1).trim().split(/ +/).shift().toLowerCase() : undefined;
+        const args = body.trim().split(/ +/).slice(1);
 
-        // Quality තේරීමේ List එක
-        const sections = [{
-            title: "Select Video Quality",
-            rows: [
-                { title: '🎥 720p HD', rowId: `.dl-final ${data.url_720 || data.url}` },
-                { title: '🎥 480p SD', rowId: `.dl-final ${data.url_480 || data.url}` },
-                { title: '🎥 360p Low', rowId: `.dl-final ${data.url_360 || data.url}` }
-            ]
-        }];
+        if (!isCmd) return;
+        const footer = await getEarnFooter();
 
-        await sock.sendMessage(from, {
-            text: "කරුණාකර ඉහත පින්තූරය යටින් ඇති menu බොත්තම ඔබා Quality එක තෝරන්න.",
-            sections: sections,
-            buttonText: 'SELECT QUALITY',
-            listType: 1
-        });
-    },
+        // විධාන පාලනය
+        if (command === 'menu' || command === 'help') {
+            await menuCmd.execute(sock, mek, from, botLogoUrl, footer);
+        } 
+        // ඩවුන්ලෝඩ් එකේදී මෙනුවෙන් එන '.dl-final' සඳහා
+        else if (command === 'dl-final') {
+            await mediaCmd.downloadFinal(sock, mek, from, args[0]);
+        }
+        // අනෙකුත් සියලුම කමාන්ඩ්ස් සඳහා
+        else if (['dl', 's', 'sticker', 'pic', 'vid', 'ovp', 'ovv', 'dp'].includes(command)) {
+            await mediaCmd.execute(sock, mek, from, command, args, botLogoUrl, footer);
+        }
+    });
+}
 
-    // අවසාන වශයෙන් වීඩියෝව යවන කොටස
-    downloadFinal: async (sock, mek, from, url) => {
-        await sock.sendMessage(from, { text: "⏳ *වීඩියෝව බාගත වෙමින් පවතී...*" });
-        await sock.sendMessage(from, { video: { url: url }, caption: "📥 *Downloaded by THUHI MD*" });
-    }
-};
+app.listen(PORT, () => startThuhiMD());
