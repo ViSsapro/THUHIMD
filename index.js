@@ -32,8 +32,8 @@ async function getEarnFooter() {
 }
 
 let sock = null;
-const messageStore = {}; // Anti-delete සඳහා
-const viewOnceStore = {}; // OVP සඳහා
+const messageStore = {};
+const viewOnceStore = {};
 
 async function startThuhiMD() {
     const { state, saveCreds } = await useMultiFileAuthState('./session');
@@ -50,7 +50,6 @@ async function startThuhiMD() {
         }
     });
 
-    // 1. මැසේජ් ගබඩා කිරීම සහ Command ක්‍රියාත්මක කිරීම
     sock.ev.on('messages.upsert', async chatUpdate => {
         if (chatUpdate.type !== 'notify') return;
         const mek = chatUpdate.messages[0];
@@ -58,7 +57,7 @@ async function startThuhiMD() {
         
         const from = mek.key.remoteJid;
         const msgId = mek.key.id;
-        messageStore[msgId] = mek; // ගබඩා කිරීම
+        messageStore[msgId] = mek;
 
         if (mek.message.viewOnceMessageV2 || mek.message.viewOnceMessage) viewOnceStore[msgId] = mek;
 
@@ -80,7 +79,6 @@ async function startThuhiMD() {
         }
     });
 
-    // 2. Anti-Delete පද්ධතිය
     sock.ev.on('messages.update', async chatUpdate => {
         for (const { key, update } of chatUpdate) {
             if (update.messageStubType === 68 || update.revoke) {
@@ -96,4 +94,26 @@ async function startThuhiMD() {
     });
 }
 
-app.listen(PORT, () => { startThuhiMD(); });
+// 🔗 WEB SERVER: index.html සහ API Endpoint එක
+app.use(express.static(__dirname));
+
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+app.get('/code', async (req, res) => {
+    let num = req.query.number;
+    if (!num) return res.status(400).json({ error: "Number is required" });
+    try {
+        if (!sock) return res.status(500).json({ error: "Server not ready" });
+        let code = await sock.requestPairingCode(num.replace(/[^0-9]/g, "").trim());
+        return res.json({ code: code });
+    } catch (error) {
+        return res.status(500).json({ error: "Error getting code" });
+    }
+});
+
+app.listen(PORT, () => { 
+    startThuhiMD(); 
+    console.log(`🚀 THUHI MD & Web Server running on port ${PORT}`);
+});
