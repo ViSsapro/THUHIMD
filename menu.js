@@ -5,46 +5,44 @@ module.exports = {
         const time = new Date().toLocaleTimeString('en-GB');
 
         const menu = `
-╭─────♡◉♡─────⌬
-💖 *Hello ${pushname}...!* 🌸
-🌷 *Welcome to 𝐓𝐇𝐔𝐇𝐈 𝐎𝐅𝐂 𝐌𝐈𝐍𝐈 Menu* ✨
-╰─────♡◉♡─────⌬
+
+╭─────♡◉◉◉♡─────⌬
+💖 *Hello User...!* 🌸  
+🌷 *Welcome to 𝐓𝐇𝐔𝐇𝐈 𝐌𝙳 𝐌𝙸𝙽𝙸 Menu* ✨  
+╰─────♡◉◉◉♡─────⌬
 
 ┆ ➤ 🌸
-┆ ➤ 💫
-┆ ➤ 🌷
+┆   ➤ 💫
+┆     ➤ 🌷
 
-📅 *Date:* ${date} 📆
-⌚ *Time:* ${time} ⏳
+📅 *Date:* 16/06/2026 📆  
+⌚ *Time:* 19:10:15 ⏳  
 
 ─────────────── 💗
 
-✨ *Commands List:* ✨
+✨ *Select a category:* ✨  
 
-🛠️ *System*
-.alive - Bot status
-.menu - Show menu
-
-👥 *Group*
-.tagall - Tag all
-.promote - Make admin
-
-📥 *Download*
-.dl - Download video
-.s - Make sticker
-
-🔓 *Tools*
-.ovp - Recover view once
+❶ 🛠️ System  
+❷ 👥 Group  
+❸ 🖼️ Media  
+❹ 📥 Download  
+❺ 🫧 Anime  
+❻ 🌐 Info  
+❼ 🎯 Fun  
+❽ 🔞 NSFW 
+❾ 🎥 Movie
 
 ─────────────── 🌸
 
-${earnFooterText}
+🌐 *THUHI-MD Mini Bot Web* 💕  
+> https://v2-ew6n.onrender.com/
 
 ┆ ✦ 🌷
-┆ ➤ 💖
-┆ ➤ 🌸
+┆   ➤ 💖
+┆     ➤ 🌸
 
-> © 𝚃𝙷𝚄𝙷𝙸 𝙾𝙵𝙲 𝙱𝙾𝚃
+> © ᴛʜᴜʜɪ-ᴏꜰᴄ 𝙼𝙳 𝙼𝙸𝙽𝙸 𝙱𝙾𝚃
+
 `;
 
         await sock.sendMessage(from, { image: { url: botLogoUrl }, caption: menu }, { quoted: mek });
