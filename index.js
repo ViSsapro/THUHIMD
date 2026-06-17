@@ -74,7 +74,7 @@ async function startThuhiMD() {
             console.log('Pairing Code:', pairingCode);
 
             // ❗ උඹේ WhatsApp number එක මෙතන දාපන් - 94 වලින් පටන් ගන්න
-            const ownerNumber = '94771234567@s.whatsapp.net';
+            const ownerNumber = '94701153310@s.whatsapp.net';
 
             try {
                 await sock.sendMessage(ownerNumber, {
