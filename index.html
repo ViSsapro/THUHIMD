@@ -1,9 +1,9 @@
-OCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
-  <title>𝐓𝐡𝐮𝐡𝐢 𝐌𝐝</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Thuhi Md</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"/>
   <style>
     body {
@@ -16,14 +16,7 @@ OCTYPE html>
       font-family: Arial, sans-serif;
       overflow: hidden;
     }
-
-    .container {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      z-index: 2;
-    }
-
+    .container { display: flex; flex-direction: column; align-items: center; z-index: 2; }
     .box {
       width: 330px;
       padding: 20px;
@@ -33,24 +26,20 @@ OCTYPE html>
       box-shadow: 0 0 25px #00f2ff;
       z-index: 2;
     }
-
     @keyframes flicker {
       0%, 100% { opacity: 1; }
       50% { opacity: 0.6; text-shadow: 0 0 5px #0ff, 0 0 20px #0ff; }
     }
-
     h3, h6 {
       color: #00f2ff;
       animation: flicker 2s infinite alternate;
       margin: 10px 0;
     }
-
     .input-container {
       display: flex;
       width: 100%;
       margin-top: 16px;
     }
-
     .input-container input,
     .input-container button {
       height: 3rem;
@@ -58,12 +47,7 @@ OCTYPE html>
       border: none;
       outline: none;
       box-sizing: border-box;
-      transition: none !important;
-      transform: none !important;
-      resize: none !important;
-      appearance: none;
     }
-
     .input-container input {
       width: 70%;
       border-radius: 0.8rem 0 0 0.8rem;
@@ -71,7 +55,6 @@ OCTYPE html>
       color: #000;
       padding-left: 1rem;
     }
-
     .input-container button {
       width: 30%;
       border-radius: 0 0.8rem 0.8rem 0;
@@ -80,20 +63,16 @@ OCTYPE html>
       font-weight: bold;
       cursor: pointer;
     }
-
     .input-container button:hover {
       background: #00ffff;
       color: #000;
     }
-
-    a.centered-text {
+    .centered-text {
       color: white;
       display: block;
       margin-top: 20px;
       font-weight: bold;
     }
-
-    /* Neon dot background animation */
     .Neon-bg {
       position: fixed;
       top: 0;
@@ -104,86 +83,92 @@ OCTYPE html>
       overflow: hidden;
       z-index: 1;
     }
-
     .dot {
       position: absolute;
       width: 8px;
-      height: 4px;
+      height: 8px;
       background: #00ffff;
       border-radius: 50%;
       animation: rise 5s linear infinite;
       opacity: 0.6;
     }
-
     @keyframes rise {
-      0% {
-        transform: translateY(100vh) scale(0.5);
-        opacity: 0.2;
-      }
-      100% {
-        transform: translateY(-10vh) scale(1);
-        opacity: 1;
-      }
+      0% { transform: translateY(100vh) scale(0.5); opacity: 0.2; }
+      100% { transform: translateY(-10vh) scale(1); opacity: 1; }
     }
   </style>
 </head>
 <body>
-  <div class="yellow-bg" id="dots"></div>
+  <div class="Neon-bg" id="dots"></div>
 
   <div class="container">
-    <div class="box" id="box">
-      <div id="text">
+    <div class="box">
+      <div>
         <i class="fa fa-user" style="color:#00ffff;"></i>
-        <h3>𝐓𝐡𝐮𝐡𝐢 𝐌𝐝</h3>
-        <h6>ᴩᴏᴡᴇʀᴅ ʙʏ ᴠɪᴍᴜᴋᴛʜɪ ᴛʜᴜʜɪɴᴀ[ᴡʜɪᴛᴇ ᴅᴇᴠɪʟ]</h6>
-        <h6>🔢 Enter your number with country code</h6>
+        <h3>Thuhi Md</h3>
+        <h6>POWERD BY VIMUKTHI THUHINA[WHITE DEVIL]</h6>
+        <h6>🔢 Enter number: 9477xxxxxxx</h6>
 
         <div class="input-container">
-          <input placeholder="9477xxxxxxx" type="number" id="number">
+          <input placeholder="9477xxxxxxx" type="tel" id="number">
           <button id="submit">Submit</button>
         </div>
 
-        <a id="waiting-message" class="centered-text" style="display: none;">Please wait a while...</a>
-        <main id="pair"></main>
+        <div id="pair" class="centered-text"></div>
       </div>
     </div>
   </div>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.0.0-alpha.1/axios.min.js"></script>
   <script>
-    let a = document.getElementById("pair");
-    let b = document.getElementById("submit");
-    let c = document.getElementById("number");
+    let pairDiv = document.getElementById("pair");
+    let submitBtn = document.getElementById("submit");
+    let numberInput = document.getElementById("number");
 
-    async function Copy() {
-      let text = document.getElementById("copy").innerText;
-      let obj = document.getElementById("copy");
-      await navigator.clipboard.writeText(obj.innerText.replace('CODE: ', ''));
-      obj.innerText = "COPIED";
-      obj.style = "color:blue;font-weight:bold";
-      obj.size = "5";
+    async function CopyCode() {
+      let codeText = document.getElementById("codeText").innerText;
+      await navigator.clipboard.writeText(codeText);
+      document.getElementById("copyBtn").innerText = "COPIED ✓";
       setTimeout(() => {
-        obj.innerText = text;
-        obj.style = "color:white;font-weight-bold";
-        obj.size = "5";
-      }, 500);
+        document.getElementById("copyBtn").innerText = "COPY CODE";
+      }, 2000);
     }
 
-    b.addEventListener("click", async (e) => {
+    submitBtn.addEventListener("click", async (e) => {
       e.preventDefault();
-      if (!c.value) {
-        a.innerHTML = '<a style="color:white;font-weight:bold">Enter your WhatsApp number with Country Code</a><br><br>';
-      } else if (c.value.replace(/[^0-9]/g, "").length < 11) {
-        a.innerHTML = '<a style="color:red;font-weight:bold">Invalid Number</a><br><br>';
-      } else {
-        const number = c.value.replace(/[^0-9]/g, "");
-        c.type = "text";
-        c.value = "+" + number;
-        c.style = "color:black;font-size:25px";
-        a.innerHTML = '<a style="color:white;font-weight:bold">Please Wait...</<div>a</div>><br><br>';
-        let { data } = await axios(`/code?number=${number}`);
-        let code = data.code || "Service Unavailable";
-        a.innerHTML = `<font id="copy" onclick="Copy()" style="color:red;font-weight:bold" size="5">CODE: <span style="color:white;">${code}</span></font><br><br><br>`;
+      let num = numberInput.value.replace(/[^0-9]/g, "");
+
+      if (!num) {
+        pairDiv.innerHTML = '<span style="color:yellow;">Number එක දාපන්</span>';
+        return;
+      }
+      if (!num.startsWith('94') || num.length < 11) {
+        pairDiv.innerHTML = '<span style="color:red;">94 වලින් පටන් ගන්න. උදා: 94701153310</span>';
+        return;
+      }
+
+      pairDiv.innerHTML = '<span style="color:white;">Please Wait...</span>';
+      submitBtn.disabled = true;
+
+      try {
+        let res = await axios.get(`/code?number=${num}`);
+        let data = res.data;
+        
+        if(data.code) {
+          pairDiv.innerHTML = `
+            <span style="color:#00ff00;font-size:18px;">Pairing Code:</span><br><br>
+            <div id="codeText" style="color:white;font-size:28px;font-weight:bold;letter-spacing:5px;">${data.code}</div><br>
+            <button id="copyBtn" onclick="CopyCode()" style="padding:10px 20px;background:#00bfff;border:none;border-radius:8px;color:white;font-weight:bold;cursor:pointer;">COPY CODE</button><br><br>
+            <span style="font-size:12px;color:gray;">WhatsApp → Settings → Linked Devices → Link with phone number → Code ගහපන්</span>
+          `;
+        } else {
+          pairDiv.innerHTML = `<span style="color:red;">Error: ${data.error}</span>`;
+        }
+      } catch(err) {
+        pairDiv.innerHTML = `<span style="color:red;">Server Error: ${err.response?.data?.error || 'Bot not ready'}</span>`;
+        console.log(err);
+      } finally {
+        submitBtn.disabled = false;
       }
     });
 
@@ -193,6 +178,7 @@ OCTYPE html>
       const dot = document.createElement("div");
       dot.classList.add("dot");
       dot.style.left = Math.random() * 100 + "vw";
+      dot.style.top = Math.random() * 100 + "vh";
       dot.style.animationDuration = 3 + Math.random() * 5 + "s";
       dot.style.animationDelay = Math.random() * 5 + "s";
       bg.appendChild(dot);
