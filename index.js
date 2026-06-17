@@ -1,8 +1,8 @@
-const { 
-    default: makeWASocket, 
-    useMultiFileAuthState, 
-    DisconnectReason, 
-    fetchLatestBaileysVersion, 
+const {
+    default: makeWASocket,
+    useMultiFileAuthState,
+    DisconnectReason,
+    fetchLatestBaileysVersion,
     delay,
     downloadMediaMessage
 } = require("@whiskeysockets/baileys");
@@ -10,30 +10,32 @@ const pino = require("pino");
 const express = require("express");
 const path = require("path");
 const axios = require("axios");
-const { Sticker, StickerTypes } = require('wa-sticker-formatter'); // 🖼️ Added for sticker conversion
+const { Sticker, StickerTypes } = require('wa-sticker-formatter');
 
-const app = express(); // Fallback directly to express if 'report' is undefined
+// menu.js file එක උඩම import කරගන්නවා - මේක අනිවාර්යයි
+const menuCmd = require('./menu.js');
+
+const app = express();
 const PORT = process.env.PORT || 3000;
 
 // 🖼️ THUHI MD Logo Link
-const botLogoUrl = "https://i.ibb.co/Z6gnPvV2/file-000000009be47207afef1535933c3f19.png";
+const botLogoUrl = "https://i.ibb.co/Z6gnPvV2/file-000009be47207afef1535933c3f19.png";
 
 // 💰 SHRINKME CONFIGURATION
-const shrinkmeApi = "81bd69560df8d7ed1f3042d7bed34037908d4998"; 
-const targetUrl = "https://youtube.com/@VimukthiThuhina"; 
+const shrinkmeApi = "81bd69560df8d7ed1f3042d7bed34037908d4998";
+const targetUrl = "https://youtube.com/@VimukthiThuhina";
 
-// 🔗 ලින්ක් එක සහ එය පාවිච්චි කරන පියවරවල් සරලව සිංහලෙන් සකසන කොටස
 async function getEarnFooter() {
-    let shortUrl = targetUrl; 
+    let shortUrl = targetUrl;
     try {
         const shortRes = await axios.get(`https://shrinkme.io/api?api=${shrinkmeApi}&url=${encodeURIComponent(targetUrl)}`);
         if (shortRes.data && shortRes.data.status === "success") {
-            shortUrl = shortRes.data.shortenedUrl; 
+            shortUrl = shortRes.data.shortenedUrl;
         }
     } catch (shortErr) {
         console.log("Shrinkme API error, bypassing...");
     }
-    
+
     return `\n\n💵 *ඔබත් කැමතිද මුදල් උපයන්න මෙම link එකෙන් යන්න:*
 👉 ${shortUrl}
 
@@ -44,10 +46,8 @@ async function getEarnFooter() {
 }
 
 let sock = null;
-
-// දත්ත තාවකාලිකව තබා ගන්නා මතක ගබඩාවන් (Memory Stores)
 const messageStore = {};
-const viewOnceStore = {}; 
+const viewOnceStore = {};
 
 app.use(express.static(path.join(__dirname)));
 
@@ -65,11 +65,10 @@ async function startThuhiMD() {
 
     sock.ev.on('creds.update', saveCreds);
 
-    // 🔗 CONNECTION UPDATE SYSTEM
     sock.ev.on('connection.update', async (update) => {
         const { connection, lastDisconnect } = update;
         if (connection === 'close') {
-            const shouldReconnect = lastDisconnect.error?.output?.statusCode !== DisconnectReason.loggedOut;
+            const shouldReconnect = lastDisconnect.error?.output?.statusCode!== DisconnectReason.loggedOut;
             if (shouldReconnect) startThuhiMD();
         } else if (connection === 'open') {
             console.log('=================================================');
@@ -83,7 +82,7 @@ async function startThuhiMD() {
 දැන් ඔබගේ inbox එකෙහි \`.alive\` ලෙස Type කර බෝට් ක්‍රියාකාරීදැයි පරීක්ෂා කරන්න!
 
 _Powered by Vimukthi Thuhina_`;
-                
+
                 await sock.sendMessage(myNumber, { image: { url: botLogoUrl }, caption: welcomeMsg });
             } catch (e) {
                 console.log("Error sending welcome message: ", e);
@@ -91,16 +90,15 @@ _Powered by Vimukthi Thuhina_`;
         }
     });
 
-    // මැසේජ් ලැබෙන විට ක්‍රියාත්මක වන පද්ධතිය
     sock.ev.on('messages.upsert', async chatUpdate => {
         try {
-            if (chatUpdate.type !== 'notify') return;
+            if (chatUpdate.type!== 'notify') return;
             const mek = chatUpdate.messages[0];
             if (!mek.message) return;
 
             const from = mek.key.remoteJid;
             const msgId = mek.key.id;
-            
+
             messageStore[msgId] = mek;
 
             const isViewOnce = mek.message.viewOnceMessageV2 || mek.message.viewOnceMessage;
@@ -113,7 +111,7 @@ _Powered by Vimukthi Thuhina_`;
                 mek.message = mek.message.ephemeralMessage.message;
                 msgType = Object.keys(mek.message)[0];
             }
-            
+
             let body = '';
             if (msgType === 'conversation') body = mek.message.conversation;
             else if (msgType === 'extendedTextMessage') body = mek.message.extendedTextMessage.text;
@@ -122,8 +120,15 @@ _Powered by Vimukthi Thuhina_`;
 
             const prefix = '.';
             const isCmd = body.startsWith(prefix);
-            const command = isCmd ? body.slice(prefix.length).trim().split(/ +/).shift().toLowerCase() : undefined;
+            const command = isCmd? body.slice(prefix.length).trim().split(/ +/).shift().toLowerCase() : undefined;
             const args = body.trim().split(/ +/).slice(1);
+
+            // Menu reply system - 1 ඉඳන් 9 වෙනකන් number reply handle කරනවා
+            if (!isCmd && ['1','2','3','4','5','6','7','8','9'].includes(body)) {
+                const earnFooterText = await getEarnFooter();
+                await menuCmd.execute(sock, mek, from, botLogoUrl, earnFooterText);
+                return; // මේක අනිවාර්යයි
+            }
 
             if (isCmd) {
                 const earnFooterText = await getEarnFooter();
@@ -134,31 +139,24 @@ _Powered by Vimukthi Thuhina_`;
 
 *OWNER* - THUHI MD
 *VERSION* - 1.0.0
-*PREFIX* - [ . ]
+*PREFIX* - [. ]
 
 💬 සියලුම විධානයන් බැලීමට \`.menu\` ලෙස ටයිප් කරන්න!${earnFooterText}`;
                     await sock.sendMessage(from, { image: { url: botLogoUrl }, caption: aliveMsg }, { quoted: mek });
                 }
 
-               // මුලින්ම ගොනුව අමතන්න (File එකේ උඩම කොටසේ)
-const menuCmd = require('./menu.js');
+                // 2. MENU COMMAND
+                if (command === 'menu' || command === 'help' || command === 'dp') {
+                    await menuCmd.execute(sock, mek, from, botLogoUrl, earnFooterText);
+                }
 
-// ... (මැසේජ් ලැබෙන තැන - messages.upsert තුල)
-
-// 2. MENU COMMAND - මෙය පෙර තිබූ කොටස ඉවත් කර දමන්න
-if (command === 'menu' || command === 'help' || command === 'dp') {
-    const earnFooterText = await getEarnFooter();
-    await menuCmd.execute(sock, mek, from, botLogoUrl, earnFooterText);
-}
-
-
-                // 3. ONE-VIEW RECOVERY (.ovp)
+                // 3. ONE-VIEW RECOVERY
                 if (command === 'ovp') {
                     const quotedMsgId = mek.message.extendedTextMessage?.contextInfo?.stanzaId;
                     if (quotedMsgId && viewOnceStore[quotedMsgId]) {
                         await sock.sendMessage(from, { text: "⏳ *One-View ඡායාරූපය බෝට් මඟින් සකසමින් පවතී...*" }, { quoted: mek });
                         const targetMek = viewOnceStore[quotedMsgId];
-                        
+
                         const buffer = await downloadMediaMessage(targetMek, 'buffer', {}, { logger: pino() });
                         await sock.sendMessage(from, { image: buffer, caption: `🔓 *THUHI MD: One-View Photo Saved Successfully!*${earnFooterText}` }, { quoted: mek });
                     } else {
@@ -166,14 +164,14 @@ if (command === 'menu' || command === 'help' || command === 'dp') {
                     }
                 }
 
-                // 4. STICKER COMMAND (.s / .sticker) - FIXED SECTION
+                // 4. STICKER COMMAND
                 if (command === 'sticker' || command === 's') {
                     const isQuotedImage = msgType === 'extendedTextMessage' && mek.message.extendedTextMessage.contextInfo?.quotedMessage?.imageMessage;
                     const isImage = msgType === 'imageMessage';
 
                     if (isImage || isQuotedImage) {
                         await sock.sendMessage(from, { text: "⏳ *ස්ටිකරය සාදමින් පවතී...*" }, { quoted: mek });
-                        
+
                         let targetMekForSticker = mek;
                         if (isQuotedImage) {
                             targetMekForSticker = {
@@ -181,20 +179,16 @@ if (command === 'menu' || command === 'help' || command === 'dp') {
                             };
                         }
 
-                        // Download the image buffer
                         const buffer = await downloadMediaMessage(targetMekForSticker, 'buffer', {}, { logger: pino() });
-                        
-                        // Process and build the proper WebP Sticker with Metadata
+
                         const sticker = new Sticker(buffer, {
-                            pack: 'THUHI MD Pack',       
-                            author: 'Vimukthi Thuhina',  
-                            type: StickerTypes.FULL,     
-                            quality: 70                  
+                            pack: 'THUHI MD Pack',
+                            author: 'Vimukthi Thuhina',
+                            type: StickerTypes.FULL,
+                            quality: 70
                         });
 
                         const stickerBuffer = await sticker.toBuffer();
-
-                        // Send the processed sticker webp buffer
                         await sock.sendMessage(from, { sticker: stickerBuffer }, { quoted: mek });
                         await sock.sendMessage(from, { text: `🎉 *ඔබේ ස්ටිකරය සාර්ථකව සකසා ඇත!*${earnFooterText}` }, { quoted: mek });
                     } else {
@@ -202,7 +196,7 @@ if (command === 'menu' || command === 'help' || command === 'dp') {
                     }
                 }
 
-                // 5. SOCIAL MEDIA DOWNLOADER WITH SHRINKME SYSTEM
+                // 5. SOCIAL MEDIA DOWNLOADER
                 if (command === 'dl' || command === 'download') {
                     const url = args[0];
                     if (!url) return await sock.sendMessage(from, { text: "❌ කරුණාකර වීඩියෝ ලින්ක් එකක් ඇතුළත් කරන්න." }, { quoted: mek });
@@ -214,7 +208,6 @@ if (command === 'menu' || command === 'help' || command === 'dp') {
                         if (res.data && res.data.result) {
                             const videoUrl = res.data.result.download_url || res.data.result.url;
                             const captionText = `📥 *Downloaded by THUHI MD*${earnFooterText}`;
-
                             await sock.sendMessage(from, { video: { url: videoUrl }, caption: captionText }, { quoted: mek });
                         } else {
                             await sock.sendMessage(from, { text: `❌ වීඩියෝව ලබා ගැනීමට නොහැකි විය.${earnFooterText}` });
@@ -223,13 +216,57 @@ if (command === 'menu' || command === 'help' || command === 'dp') {
                         await sock.sendMessage(from, { text: `❌ ඩවුන්ලෝඩර් සර්වර් දෝෂයකි.${earnFooterText}` });
                     }
                 }
+
+                // 6. GROUP COMMANDS
+                if (command === 'tagall') {
+                    if (!from.endsWith('@g.us')) return await sock.sendMessage(from, { text: '❌ Group එකේ විතරක් වැඩ' }, { quoted: mek });
+                    const metadata = await sock.groupMetadata(from);
+                    let members = metadata.participants.map(p => `@${p.id.split('@')[0]}`).join('\n');
+                    await sock.sendMessage(from, { text: `📢 *THUHI MD Tag All*\n\n${members}${earnFooterText}`, mentions: metadata.participants.map(p => p.id) }, { quoted: mek });
+                }
+
+                if (command === 'kick') {
+                    if (!from.endsWith('@g.us')) return await sock.sendMessage(from, { text: '❌ Group එකේ විතරක් වැඩ' }, { quoted: mek });
+                    const mentioned = mek.message.extendedTextMessage?.contextInfo?.mentionedJid;
+                    if (!mentioned) return await sock.sendMessage(from, { text: '❌ Member කෙනෙක් tag කරන්න' }, { quoted: mek });
+                    await sock.groupParticipantsUpdate(from, mentioned, 'remove');
+                    await sock.sendMessage(from, { text: '✅ Kick කරන ලදී' }, { quoted: mek });
+                }
+
+                if (command === 'promote') {
+                    if (!from.endsWith('@g.us')) return await sock.sendMessage(from, { text: '❌ Group එකේ විතරක් වැඩ' }, { quoted: mek });
+                    const mentioned = mek.message.extendedTextMessage?.contextInfo?.mentionedJid;
+                    if (!mentioned) return await sock.sendMessage(from, { text: '❌ Member කෙනෙක් tag කරන්න' }, { quoted: mek });
+                    await sock.groupParticipantsUpdate(from, mentioned, 'promote');
+                    await sock.sendMessage(from, { text: '✅ Promote කරන ලදී' }, { quoted: mek });
+                }
+
+                if (command === 'demote') {
+                    if (!from.endsWith('@g.us')) return await sock.sendMessage(from, { text: '❌ Group එකේ විතරක් වැඩ' }, { quoted: mek });
+                    const mentioned = mek.message.extendedTextMessage?.contextInfo?.mentionedJid;
+                    if (!mentioned) return await sock.sendMessage(from, { text: '❌ Member කෙනෙක් tag කරන්න' }, { quoted: mek });
+                    await sock.groupParticipantsUpdate(from, mentioned, 'demote');
+                    await sock.sendMessage(from, { text: '✅ Demote කරන ලදී' }, { quoted: mek });
+                }
+
+                if (command === 'group' && args[0] === 'open') {
+                    if (!from.endsWith('@g.us')) return await sock.sendMessage(from, { text: '❌ Group එකේ විතරක් වැඩ' }, { quoted: mek });
+                    await sock.groupSettingUpdate(from, 'not_announcement');
+                    await sock.sendMessage(from, { text: '🔓 Group එක open කරන ලදී' }, { quoted: mek });
+                }
+
+                if (command === 'group' && args[0] === 'close') {
+                    if (!from.endsWith('@g.us')) return await sock.sendMessage(from, { text: '❌ Group එකේ විතරක් වැඩ' }, { quoted: mek });
+                    await sock.groupSettingUpdate(from, 'announcement');
+                    await sock.sendMessage(from, { text: '🔒 Group එක close කරන ලදී' }, { quoted: mek });
+                }
             }
         } catch (err) {
             console.log("Error inside upsert: ", err);
         }
     });
 
-    // 🚨 ANTI-DELETE DETECTOR SYSTEM
+    // ANTI-DELETE
     sock.ev.on('messages.update', async chatUpdate => {
         for (const { key, update } of chatUpdate) {
             if (update.messageStubType === 68 || update.revoke) {
@@ -251,40 +288,25 @@ if (command === 'menu' || command === 'help' || command === 'dp') {
                     let deletedText = '';
                     if (innerType === 'conversation') deletedText = innerMsg.conversation;
                     else if (innerType === 'extendedTextMessage') deletedText = innerMsg.extendedTextMessage.text;
-                    else if (innerType === 'imageMessage') deletedText = innerMsg.imageMessage.caption || '🖼️ (ඡායාරූපයක caption එකක් නොමැත)';
-                    else if (innerType === 'videoMessage') deletedText = innerMsg.videoMessage.caption || '📹 (වීඩියෝවක caption එකක් නොමැත)';
-                    else if (innerType === 'audioMessage') deletedText = '🎵 (හඬ පටයකි / Audio File)';
-                    else if (innerType === 'documentMessage') deletedText = `📄 Document: ${innerMsg.documentMessage.fileName || 'File'}`;
-                    else deletedText = '📦 (මීඩියා හෝ වෙනත් මැසේජ් එකකි)';
+                    else if (innerType === 'imageMessage') deletedText = innerMsg.imageMessage.caption || '🖼️ (caption නැත)';
+                    else if (innerType === 'videoMessage') deletedText = innerMsg.videoMessage.caption || '📹 (caption නැත)';
+                    else deletedText = '📦 Media';
 
                     const earnFooterText = await getEarnFooter();
-                    const antiDeleteAlert = `*°❤️🛑 ANTI DELETE DETECTED 🛑❤️°*
-
-• *Deleted By:* @${senderNum}
-• *Message From:* @${senderNum}
-
-💬 *Message:* ${deletedText}
-
-| © *THUHI MD MINI BOT*${earnFooterText}`;
+                    const antiDeleteAlert = `*°❤️🛑 ANTI DELETE DETECTED 🛑❤️°*\n\n• *Deleted By:* @${senderNum}\n💬 *Message:* ${deletedText}\n\n| © *THUHI MD MINI BOT*${earnFooterText}`;
 
                     await sock.sendMessage(from, { text: antiDeleteAlert, mentions: [participant] });
 
-                    const hasMedia = ['imageMessage', 'videoMessage', 'audioMessage', 'documentMessage'].includes(innerType);
+                    const hasMedia = ['imageMessage', 'videoMessage'].includes(innerType);
                     if (hasMedia) {
                         try {
                             const buffer = await downloadMediaMessage(oldMessage, 'buffer', {}, { logger: pino() });
                             if (innerType === 'imageMessage') {
-                                await sock.sendMessage(from, { image: buffer, caption: '🔺 *මකාදැමූ ඡායාරූපය (Recovered)*' });
+                                await sock.sendMessage(from, { image: buffer, caption: '🔺 *මකාදැමූ ඡායාරූපය*' });
                             } else if (innerType === 'videoMessage') {
-                                await sock.sendMessage(from, { video: buffer, caption: '🔺 *මකාදැමූ වීඩියෝව (Recovered)*' });
-                            } else if (innerType === 'audioMessage') {
-                                await sock.sendMessage(from, { audio: buffer, mimetype: innerMsg.audioMessage.mimetype, ptt: innerMsg.audioMessage.ptt });
-                            } else if (innerType === 'documentMessage') {
-                                await sock.sendMessage(from, { document: buffer, mimetype: innerMsg.documentMessage.mimetype, fileName: innerMsg.documentMessage.fileName });
+                                await sock.sendMessage(from, { video: buffer, caption: '🔺 *මකාදැමූ වීඩියෝව*' });
                             }
-                        } catch (mediaErr) {
-                            console.log("Media download error on anti-delete:", mediaErr);
-                        }
+                        } catch (mediaErr) {}
                     }
                 }
             }
@@ -296,7 +318,7 @@ if (command === 'menu' || command === 'help' || command === 'dp') {
 app.get('/code', async (req, res) => {
     let num = req.query.number;
     if (!num) return res.status(400).json({ error: "Number is required" });
-    num = num.replace(/[^0-9]/g, ""); 
+    num = num.replace(/[^0-9]/g, "");
     try {
         if (!sock) return res.status(500).json({ error: "Server not ready" });
         await delay(2000);
