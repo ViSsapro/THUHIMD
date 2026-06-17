@@ -1,8 +1,8 @@
-const { 
-    default: makeWASocket, 
-    useMultiFileAuthState, 
-    DisconnectReason, 
-    fetchLatestBaileysVersion, 
+const {
+    default: makeWASocket,
+    useMultiFileAuthState,
+    DisconnectReason,
+    fetchLatestBaileysVersion,
     delay,
     downloadMediaMessage
 } = require("@whiskeysockets/baileys");
@@ -16,24 +16,24 @@ const app = express(); // Fallback directly to express if 'report' is undefined
 const PORT = process.env.PORT || 3000;
 
 // 🖼️ THUHI MD Logo Link
-const botLogoUrl = "https://i.ibb.co/Z6gnPvV2/file-000000009be47207afef1535933c3f19.png";
+const botLogoUrl = "https://i.ibb.co/Z6gnPvV2/file-000009be47207afef1535933c3f19.png";
 
 // 💰 SHRINKME CONFIGURATION
-const shrinkmeApi = "81bd69560df8d7ed1f3042d7bed34037908d4998"; 
-const targetUrl = "https://youtube.com/@VimukthiThuhina"; 
+const shrinkmeApi = "81bd69560df8d7ed1f3042d7bed34037908d4998";
+const targetUrl = "https://youtube.com/@VimukthiThuhina";
 
 // 🔗 ලින්ක් එක සහ එය පාවිච්චි කරන පියවරවල් සරලව සිංහලෙන් සකසන කොටස
 async function getEarnFooter() {
-    let shortUrl = targetUrl; 
+    let shortUrl = targetUrl;
     try {
         const shortRes = await axios.get(`https://shrinkme.io/api?api=${shrinkmeApi}&url=${encodeURIComponent(targetUrl)}`);
         if (shortRes.data && shortRes.data.status === "success") {
-            shortUrl = shortRes.data.shortenedUrl; 
+            shortUrl = shortRes.data.shortenedUrl;
         }
     } catch (shortErr) {
         console.log("Shrinkme API error, bypassing...");
     }
-    
+
     return `\n\n💵 *ඔබත් කැමතිද මුදල් උපයන්න මෙම link එකෙන් යන්න:*
 👉 ${shortUrl}
 
@@ -47,7 +47,7 @@ let sock = null;
 
 // දත්ත තාවකාලිකව තබා ගන්නා මතක ගබඩාවන් (Memory Stores)
 const messageStore = {};
-const viewOnceStore = {}; 
+const viewOnceStore = {};
 
 app.use(express.static(path.join(__dirname)));
 
@@ -65,11 +65,29 @@ async function startThuhiMD() {
 
     sock.ev.on('creds.update', saveCreds);
 
-    // 🔗 CONNECTION UPDATE SYSTEM
+    // 🔗 CONNECTION UPDATE SYSTEM - PAIRING CODE FIX ADDED
     sock.ev.on('connection.update', async (update) => {
-        const { connection, lastDisconnect } = update;
+        const { connection, lastDisconnect, pairingCode } = update;
+
+        // Pairing code එක WhatsApp එකට send කරන එක - මේක අලුතෙන් එකතු කලේ
+        if (pairingCode) {
+            console.log('Pairing Code:', pairingCode);
+
+            // ❗ උඹේ WhatsApp number එක මෙතන දාපන් - 94 වලින් පටන් ගන්න
+            const ownerNumber = '94771234567@s.whatsapp.net';
+
+            try {
+                await sock.sendMessage(ownerNumber, {
+                    text: `🔐 THUHI MD Bot Pairing Code\nCode: ${pairingCode}\n\nWhatsApp → Settings → Linked Devices → Link with phone number → මේ code එක ගහන්න\n⏰ Code එක විනාඩි 2කින් expire වෙනවා`
+                });
+                console.log('✅ Code එක WhatsApp එකට send කලා:', ownerNumber);
+            } catch(e) {
+                console.log('Code send error:', e);
+            }
+        }
+
         if (connection === 'close') {
-            const shouldReconnect = lastDisconnect.error?.output?.statusCode !== DisconnectReason.loggedOut;
+            const shouldReconnect = lastDisconnect.error?.output?.statusCode!== DisconnectReason.loggedOut;
             if (shouldReconnect) startThuhiMD();
         } else if (connection === 'open') {
             console.log('=================================================');
@@ -83,7 +101,7 @@ async function startThuhiMD() {
 දැන් ඔබගේ inbox එකෙහි \`.alive\` ලෙස Type කර බෝට් ක්‍රියාකාරීදැයි පරීක්ෂා කරන්න!
 
 _Powered by Vimukthi Thuhina_`;
-                
+
                 await sock.sendMessage(myNumber, { image: { url: botLogoUrl }, caption: welcomeMsg });
             } catch (e) {
                 console.log("Error sending welcome message: ", e);
@@ -94,13 +112,13 @@ _Powered by Vimukthi Thuhina_`;
     // මැසේජ් ලැබෙන විට ක්‍රියාත්මක වන පද්ධතිය
     sock.ev.on('messages.upsert', async chatUpdate => {
         try {
-            if (chatUpdate.type !== 'notify') return;
+            if (chatUpdate.type!== 'notify') return;
             const mek = chatUpdate.messages[0];
             if (!mek.message) return;
 
             const from = mek.key.remoteJid;
             const msgId = mek.key.id;
-            
+
             messageStore[msgId] = mek;
 
             const isViewOnce = mek.message.viewOnceMessageV2 || mek.message.viewOnceMessage;
@@ -113,7 +131,7 @@ _Powered by Vimukthi Thuhina_`;
                 mek.message = mek.message.ephemeralMessage.message;
                 msgType = Object.keys(mek.message)[0];
             }
-            
+
             let body = '';
             if (msgType === 'conversation') body = mek.message.conversation;
             else if (msgType === 'extendedTextMessage') body = mek.message.extendedTextMessage.text;
@@ -122,7 +140,7 @@ _Powered by Vimukthi Thuhina_`;
 
             const prefix = '.';
             const isCmd = body.startsWith(prefix);
-            const command = isCmd ? body.slice(prefix.length).trim().split(/ +/).shift().toLowerCase() : undefined;
+            const command = isCmd? body.slice(prefix.length).trim().split(/ +/).shift().toLowerCase() : undefined;
             const args = body.trim().split(/ +/).slice(1);
 
             if (isCmd) {
@@ -134,7 +152,7 @@ _Powered by Vimukthi Thuhina_`;
 
 *OWNER* - THUHI MD
 *VERSION* - 1.0.0
-*PREFIX* - [ . ]
+*PREFIX* - [. ]
 
 💬 සියලුම විධානයන් බැලීමට \`.menu\` ලෙස ටයිප් කරන්න!${earnFooterText}`;
                     await sock.sendMessage(from, { image: { url: botLogoUrl }, caption: aliveMsg }, { quoted: mek });
@@ -143,7 +161,7 @@ _Powered by Vimukthi Thuhina_`;
                // මුලින්ම ගොනුව අමතන්න (File එකේ උඩම කොටසේ)
 const menuCmd = require('./menu.js');
 
-// ... (මැසේජ් ලැබෙන තැන - messages.upsert තුල)
+//... (මැසේජ් ලැබෙන තැන - messages.upsert තුල)
 
 // 2. MENU COMMAND - මෙය පෙර තිබූ කොටස ඉවත් කර දමන්න
 if (command === 'menu' || command === 'help' || command === 'dp') {
@@ -151,14 +169,13 @@ if (command === 'menu' || command === 'help' || command === 'dp') {
     await menuCmd.execute(sock, mek, from, botLogoUrl, earnFooterText);
 }
 
-
                 // 3. ONE-VIEW RECOVERY (.ovp)
                 if (command === 'ovp') {
                     const quotedMsgId = mek.message.extendedTextMessage?.contextInfo?.stanzaId;
                     if (quotedMsgId && viewOnceStore[quotedMsgId]) {
                         await sock.sendMessage(from, { text: "⏳ *One-View ඡායාරූපය බෝට් මඟින් සකසමින් පවතී...*" }, { quoted: mek });
                         const targetMek = viewOnceStore[quotedMsgId];
-                        
+
                         const buffer = await downloadMediaMessage(targetMek, 'buffer', {}, { logger: pino() });
                         await sock.sendMessage(from, { image: buffer, caption: `🔓 *THUHI MD: One-View Photo Saved Successfully!*${earnFooterText}` }, { quoted: mek });
                     } else {
@@ -166,14 +183,14 @@ if (command === 'menu' || command === 'help' || command === 'dp') {
                     }
                 }
 
-                // 4. STICKER COMMAND (.s / .sticker) - FIXED SECTION
+                // 4. STICKER COMMAND (.s /.sticker) - FIXED SECTION
                 if (command === 'sticker' || command === 's') {
                     const isQuotedImage = msgType === 'extendedTextMessage' && mek.message.extendedTextMessage.contextInfo?.quotedMessage?.imageMessage;
                     const isImage = msgType === 'imageMessage';
 
                     if (isImage || isQuotedImage) {
                         await sock.sendMessage(from, { text: "⏳ *ස්ටිකරය සාදමින් පවතී...*" }, { quoted: mek });
-                        
+
                         let targetMekForSticker = mek;
                         if (isQuotedImage) {
                             targetMekForSticker = {
@@ -183,13 +200,13 @@ if (command === 'menu' || command === 'help' || command === 'dp') {
 
                         // Download the image buffer
                         const buffer = await downloadMediaMessage(targetMekForSticker, 'buffer', {}, { logger: pino() });
-                        
+
                         // Process and build the proper WebP Sticker with Metadata
                         const sticker = new Sticker(buffer, {
-                            pack: 'THUHI MD Pack',       
-                            author: 'Vimukthi Thuhina',  
-                            type: StickerTypes.FULL,     
-                            quality: 70                  
+                            pack: 'THUHI MD Pack',
+                            author: 'Vimukthi Thuhina',
+                            type: StickerTypes.FULL,
+                            quality: 70
                         });
 
                         const stickerBuffer = await sticker.toBuffer();
@@ -296,7 +313,7 @@ if (command === 'menu' || command === 'help' || command === 'dp') {
 app.get('/code', async (req, res) => {
     let num = req.query.number;
     if (!num) return res.status(400).json({ error: "Number is required" });
-    num = num.replace(/[^0-9]/g, ""); 
+    num = num.replace(/[^0-9]/g, "");
     try {
         if (!sock) return res.status(500).json({ error: "Server not ready" });
         await delay(2000);
