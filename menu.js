@@ -5,18 +5,18 @@ module.exports = {
         const time = new Date().toLocaleTimeString('en-GB');
 
         const menu = `
-╭┈୨💕୧┈╮
+╭┈୨💕୧┈╮        ╭┈୨💕୧┈╮
       𝐓𝐇𝐔𝐇𝐈 𝐌𝐃 𝐌𝐈𝐍𝐈
-╰┈୨💕୧┈╯
+╰┈୨💕୧┈╯        ╰┈୨💕୧┈╯
 
-🌸 Hey Bestie~!
+🌸 Hey baby~!
 
 Welcome to your favorite bot menu 🎀
 
 ♡ ${date}
 ♡ ${time}
 
-─────────────
+꧁⃢༺─────────────༻⃢꧂
 
 🩷 Reply with number:
 
@@ -30,12 +30,12 @@ Welcome to your favorite bot menu 🎀
 8️⃣ ♡ 🔞 NSFW
 9️⃣ ♡ 🎥 Movie
 
-─────────────
+꧁⃢༺─────────────༻⃢꧂
 
 🎀 Web:
 https://v2-ew6n.onrender.com
 
-─────────────
+─────────────࿐
 
 💌 Made With Love
 
