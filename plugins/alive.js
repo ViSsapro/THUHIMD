@@ -3,11 +3,11 @@ module.exports = {
     aliases: ['alive'],
     execute: async (sock, mek, from, args) => {
         // ඔබේ බොට් ලෝගෝ එකේ URL එක මෙතැනට ඇතුලත් කරන්න
-        const botLogoUrl = "https://i.ibb.co/FkvLpDYZ/1781795691025.png"; 
+        const botLogoUrl = "https://i.ibb.co/Z6gnPvV2/file-000009be47207afef1535933c3f19.png"; 
         
-        const aliveMsg = `👋 *Dark Matter XMD IS ALIVE NOW*
+        const aliveMsg = `👋 *Thuhi MD IS ALIVE NOW*
 
-*OWNER* - Vimukthi Thuhina × White Dragon
+*OWNER* - Vimukthi Thuhina
 *VERSION* - 1.0.0
 *STATUS* - Online ✅
 
